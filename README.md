@@ -1,15 +1,52 @@
-# Construction Lead Machine: Westchester and NYC
+# Contract Connect
+
+Early construction leads for Westchester County and New York City. Public landing page, sign-up, each user picks the towns and boroughs they work in, then sees the call lists, project pages and trade estimates for those areas only.
+
+## Pages
+
+| Page | What it is |
+|---|---|
+| `index.html` | Public landing page |
+| `login.html` | Sign up, log in, password reset |
+| `areas.html` | Pick towns and boroughs (first step after sign-up; "My areas" afterwards) |
+| `westchester.html` | Westchester app: County Planning Board referrals |
+| `nyc.html` | NYC app: Department of Buildings filings |
+
+Sources are in `src/`; `python3 build.py` writes the pages above plus `cc.js` and `cc.css`. **The built pages contain no project data.** After sign-in, the app pages load data from Supabase, and the database returns only rows in the areas the user picked.
+
+## How access works
+
+- **Supabase** handles accounts and stores the data. Tables and rules: `supabase/schema.sql`.
+- `profiles.areas` holds each user's picks (`wc:Yonkers`, `nyc:Brooklyn`, ...). Users can change only that column.
+- `profiles.has_access` is the paywall switch. It is `true` for everyone for now; payments will set it later. Users cannot change it.
+- `projects` and `area_info` (town contacts) can be read only by signed-in users with access, and only for their areas. Signed-out visitors can read nothing.
+- `push_supabase.py` uploads the data with the secret key. The daily job runs it after the pulls.
+
+## One-time setup
+
+1. Create a Supabase project (East US region).
+2. In Supabase, open **SQL Editor**, paste `supabase/schema.sql` and run it.
+3. In **Authentication -> URL Configuration**, set **Site URL** to `https://rezcagroup.github.io/contract-connect/` and add `https://rezcagroup.github.io/contract-connect/**` to the redirect URLs, so confirmation and reset emails link back to the site.
+4. Put the **Project URL** and **publishable key** in `site_config.json`. Both are public. The build refuses a secret key there.
+5. In GitHub: **Settings -> Secrets and variables -> Actions**, add `SUPABASE_URL` and `SUPABASE_SECRET_KEY` (the secret key, `sb_secret_...`). Never commit the secret key.
+6. Run the **Refresh and publish** workflow once (Actions tab) to upload the data.
+
+To look up a user or switch off someone's access: Supabase **Table Editor -> profiles**.
+
+---
+
+# Data sources and the two apps
 
 Two pages, same idea: find private construction jobs at the earliest public moment, size each trade's slice, and show who to contact.
 
-- `index.html`: Westchester County, from County Planning Board referrals (described below).
+- `westchester.html`: Westchester County, from County Planning Board referrals (described below).
 - `nyc.html`: New York City's five boroughs, from Department of Buildings filings (see "NYC" at the end).
 
 ## Westchester
 
 A single-page lead tool built from Westchester County Planning Board referrals. Every town in the county must send bigger land-use cases (site plans with 5,000+ sq ft of floor area, or 10,000+ sq ft of land disturbance) to the County Planning Board, so the referral list is a county-wide feed of new construction projects, months before a building permit.
 
-Open `index.html` in a browser. No server or build step needed to view it.
+The Westchester app is `westchester.html` (built from `src/body.html` and `src/script.js`).
 
 ## What it does
 
@@ -22,8 +59,8 @@ Open `index.html` in a browser. No server or build step needed to view it.
 ## Layout
 
 ```
-index.html        built page (open this)
-build.py          rebuilds index.html from src/ and data/
+westchester.html  built Westchester app (data loads from Supabase after sign-in)
+build.py          rebuilds all pages from src/ (no data goes into them)
 src/
   head.html       <head> and font links
   css.txt         styles
@@ -61,7 +98,7 @@ There is no automated lookup: citysquared.com blocks automated browsers, so perm
 
 ## Automatic refresh
 
-`.github/workflows/refresh.yml` runs every morning at 10:17 UTC (about 5 to 6 am New York), on every push to `main`, and on demand from the Actions tab. It pulls fresh NYC filings (`pull_nyc.py`) and Westchester referrals (`pull_westchester.py`), rebuilds both pages and publishes them to GitHub Pages at https://rezcagroup.github.io/westchester-lead-machine/. Nothing is committed back; the fresh data goes only to the published site. If the county service is down, the Westchester page is published from the data already in the repo. Running the pull scripts by hand and committing is only needed to update the copies in the repo.
+`.github/workflows/refresh.yml` runs every morning at 10:17 UTC (about 5 to 6 am New York), on every push to `main`, and on demand from the Actions tab. It pulls fresh NYC filings (`pull_nyc.py`) and Westchester referrals (`pull_westchester.py`), rebuilds both pages and publishes them to GitHub Pages at https://rezcagroup.github.io/contract-connect/. Nothing is committed back; the fresh data goes only to the published site. If the county service is down, the Westchester page is published from the data already in the repo. Running the pull scripts by hand and committing is only needed to update the copies in the repo.
 
 ## Estimates
 
@@ -101,4 +138,4 @@ Source files: `src/nyc_body.html`, `src/nyc_script.js` (placeholder `__NYC__`); 
 
 ### Daily refresh and hosting
 
-`.github/workflows/refresh.yml` pulls the NYC data every morning, rebuilds both pages and publishes them with GitHub Pages. It runs once the file is on `main` and Settings -> Pages -> Source is set to "GitHub Actions". A Pages site is public. Nothing is committed back to the repo, so `data/nyc.json` and `nyc.html` in git are only as fresh as the last manual pull.
+`.github/workflows/refresh.yml` pulls the NYC data every morning, uploads it to Supabase, rebuilds the pages and publishes them with GitHub Pages. The published pages hold no data. Nothing is committed back to the repo, so `data/nyc.json` in git is only as fresh as the last manual pull.

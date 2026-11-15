@@ -220,7 +220,7 @@ function home(){
   $('#h-eyebrow').textContent=`Westchester County · Planning Board referrals · Nov 2025 to Nov 2026 · pulled ${PULLED}`;
   const c=jobs.filter(j=>j.c4);
   $('#h-big').textContent=fmt$(c.reduce((a,j)=>a+j.value,0));
-  $('#h-lede').innerHTML=`Claude read all <b>${jobs.length}</b> projects Westchester towns sent to the County Planning Board in the last year. <b>${c.length}</b> are private, local-builder size, and were filed in the last ${A.days} days. That's about <b>${fmt$(c.reduce((a,j)=>a+j.tv,0))}</b> of ${tname(A.trade)} work nobody has bid yet. Everything referred in the year, including public work and megaprojects, totals ${fmt$(tot)}.${(n=>n?` <b>${n}</b> more on the list ${n===1?'gives':'give'} units but no floor area, so ${n===1?'it has':'they have'} no dollar figure.`:'')(c.filter(j=>j.noArea).length)}`;
+  $('#h-lede').innerHTML=`Contract Connect read all <b>${jobs.length}</b> projects Westchester towns sent to the County Planning Board in the last year. <b>${c.length}</b> are private, local-builder size, and were filed in the last ${A.days} days. That's about <b>${fmt$(c.reduce((a,j)=>a+j.tv,0))}</b> of ${tname(A.trade)} work nobody has bid yet. Everything referred in the year, including public work and megaprojects, totals ${fmt$(tot)}.${(n=>n?` <b>${n}</b> more on the list ${n===1?'gives':'give'} units but no floor area, so ${n===1?'it has':'they have'} no dollar figure.`:'')(c.filter(j=>j.noArea).length)}`;
   const s0=jobs,s1=jobs.filter(j=>j.c1),s2=jobs.filter(j=>j.c2),s3=jobs.filter(j=>j.c3),s4=c;
   const steps=[['Referred','Projects with construction scope',s0],['Cut 1','Private, not public or institutional',s1],['Cut 2','A real building: 5,000+ sq ft or 5+ units',s2],['Cut 3','Local-builder size, under 250,000 sq ft',s3],['Call list',`Filed in the last ${A.days} days`,s4]];
   $('#funnel').innerHTML=`<div class="pad" style="padding-bottom:4px"><div class="eyebrow">The bid schedule</div><h3 style="margin:4px 0 8px">From every referral to the first call</h3></div>`+
@@ -399,7 +399,7 @@ function drawMap(){
   items.forEach(({j,p})=>{
     const h=5+Math.sqrt(Math.min(j.area||j.sqd/4,cap)/maxSq)*(top+60);
     const hot=j.c4;
-    g.fillStyle=hot?'#ffb020':'#4b5f75';g.fillRect(p[0]-bw,p[1]-h,bw,h);
+    g.fillStyle=hot?'#f5a623':'#4b5f75';g.fillRect(p[0]-bw,p[1]-h,bw,h);
     g.fillStyle=hot?'#c7850e':'#38485a';g.fillRect(p[0],p[1]-h,bw,h);
     g.fillStyle=hot?'#ffd27a':'#6c86a3';g.fillRect(p[0]-bw,p[1]-h-2,bw*2,2);
     hits.push({x:p[0],y0:p[1]-h-3,y1:p[1],j});

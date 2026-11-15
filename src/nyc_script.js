@@ -15,6 +15,8 @@ const TRADES = {
 };
 const tname = k => { const n=TRADES[k].n; return /^(GC|HVAC)/.test(n)?n:n.toLowerCase(); };
 const BOROS = ['Manhattan','Brooklyn','Queens','Bronx','Staten Island'];
+// How to name the boroughs in view when no single one is picked (the user may have picked only some).
+const ALLB = () => BOROS.length===5 ? 'the five boroughs' : BOROS.length===1 ? BOROS[0] : BOROS.slice(0,-1).join(', ')+' and '+BOROS[BOROS.length-1];
 const WINDOWS = [7,14,30,60,90,180];
 const A = {psf:500, trade:'concrete', days:30, boro:'', stage:'open'};
 try{const s=JSON.parse(localStorage.getItem('nyc-assume')||'null'); if(s){A.psf=s.psf||A.psf; if(TRADES[s.trade])A.trade=s.trade; if(WINDOWS.includes(s.days))A.days=s.days; if(BOROS.includes(s.boro))A.boro=s.boro; if(['open','pre','permit'].includes(s.stage))A.stage=s.stage;}}catch(e){}
@@ -199,23 +201,24 @@ function tradebar(){
   document.querySelectorAll('#tradebar .tbtn').forEach(b=>b.onclick=()=>{A.trade=b.dataset.k;save();tradebar();refresh()});
 }
 function borobar(){
-  $('#borobar').innerHTML='<span class="lbl">Borough</span>'+[''].concat(BOROS).map(b=>`<button class="tbtn ${b===A.boro?'on':''}" data-b="${b}" aria-pressed="${b===A.boro}">${b||'All five'}</button>`).join('');
+  $('#borobar').classList.toggle('hide', BOROS.length<2);
+  $('#borobar').innerHTML='<span class="lbl">Borough</span>'+[''].concat(BOROS).map(b=>`<button class="tbtn ${b===A.boro?'on':''}" data-b="${b}" aria-pressed="${b===A.boro}">${b||(BOROS.length===5?'All five':'All')}</button>`).join('');
   document.querySelectorAll('#borobar .tbtn').forEach(b=>b.onclick=()=>{A.boro=b.dataset.b;save();borobar();refresh()});
 }
 const callJobs = () => jobs.filter(j=>j.c4);
 const stageLabel = () => A.stage==='pre'?'before a permit':A.stage==='permit'?'with a permit issued':'still open';
 function ticker(){
   const stale=daysAgo(PULLED);
-  $('#ticker').innerHTML=`Pulled ${fdate(PULLED)}${stale>3?` <b style="color:var(--bad)">(${stale} days old: run pull_nyc.py)</b>`:''} · <b>${fmtN(jobs.length)}</b> DOB filings read ·${PREV?` <b>${callJobs().filter(j=>j.fresh).length}</b> on the list since your last visit (${fdate(PREV)}) ·`:''} <b>${callJobs().length}</b> on the call list (${A.boro||'all boroughs'}, last ${A.days} days) · $${A.psf}/sq ft where no cost is filed · ${TRADES[A.trade].n} at ${Math.round(TRADES[A.trade].s*100)}% of cost`;
+  $('#ticker').innerHTML=`Pulled ${fdate(PULLED)}${stale>3?` <b style="color:var(--bad)">(${stale} days ago; the daily update is behind)</b>`:''} · <b>${fmtN(jobs.length)}</b> DOB filings read ·${PREV?` <b>${callJobs().filter(j=>j.fresh).length}</b> on the list since your last visit (${fdate(PREV)}) ·`:''} <b>${callJobs().length}</b> on the call list (${A.boro||(BOROS.length===5?'all boroughs':ALLB())}, last ${A.days} days) · $${A.psf}/sq ft where no cost is filed · ${TRADES[A.trade].n} at ${Math.round(TRADES[A.trade].s*100)}% of cost`;
 }
 const sum=(l,k)=>l.reduce((a,j)=>a+j[k],0);
 function home(){
   const scope=jobs.filter(j=>(!A.boro||j.boro===A.boro)&&j.inWin);
   const c=callJobs(), T=TRADES[A.trade];
-  $('#h-eyebrow').textContent=`${A.boro||'New York City, five boroughs'} · DOB NOW job filings · last ${A.days} days · pulled ${fdate(PULLED)}`;
+  $('#h-eyebrow').textContent=`${A.boro||(BOROS.length===5?'New York City, five boroughs':'New York City, '+ALLB())} · DOB NOW job filings · last ${A.days} days · pulled ${fdate(PULLED)}`;
   $('#h-big').textContent=fmt$(sum(c,'value'));
   const noGC=c.filter(j=>!j.gc);
-  $('#h-lede').innerHTML=`<b>${fmtN(scope.length)}</b> new buildings and major alterations were filed with the Department of Buildings in ${esc(A.boro||'the five boroughs')} in the last ${A.days} days. <b>${c.length}</b> are private, local-builder size and ${stageLabel()}. That's about <b>${fmt$(sum(c,'tv'))}</b> of ${esc(tname(A.trade))} work, and <b>${noGC.length}</b> of them have no contractor on a permit yet. Everything filed in that window, including public work and megaprojects, totals ${fmt$(sum(scope,'value'))}.`;
+  $('#h-lede').innerHTML=`<b>${fmtN(scope.length)}</b> new buildings and major alterations were filed with the Department of Buildings in ${esc(A.boro||ALLB())} in the last ${A.days} days. <b>${c.length}</b> are private, local-builder size and ${stageLabel()}. That's about <b>${fmt$(sum(c,'tv'))}</b> of ${esc(tname(A.trade))} work, and <b>${noGC.length}</b> of them have no contractor on a permit yet. Everything filed in that window, including public work and megaprojects, totals ${fmt$(sum(scope,'value'))}.`;
   const s1=scope.filter(j=>j.c1),s2=scope.filter(j=>j.c2),s3=scope.filter(j=>j.c3);
   const steps=[['Filed',`Initial DOB filings, last ${A.days} days`,scope],['Cut 1','Private owner, not withdrawn',s1],['Cut 2',`A real job: 5,000+ sq ft, 5+ units or ${fmt$(SRC.altMinCost)}+ filed cost`,s2],['Cut 3','Local-builder size: under 250,000 sq ft and $50M',s3],['Call list',A.stage==='open'?'Not yet signed off':A.stage==='pre'?'No permit issued yet':'Permit issued',c]];
   $('#funnel').innerHTML=`<div class="pad" style="padding-bottom:4px"><div class="eyebrow">The bid schedule</div><h3 style="margin:4px 0 8px">From every filing to the first call</h3></div>`+
@@ -387,7 +390,7 @@ function drawMap(){
   items.forEach(({j,p})=>{
     const h=4+Math.sqrt(Math.min(j.value,50e6)/50e6)*70;
     const hot=j.c4;
-    g.fillStyle=hot?'#ffb020':'#4b5f75';g.fillRect(p[0]-bw,p[1]-h,bw,h);
+    g.fillStyle=hot?'#f5a623':'#4b5f75';g.fillRect(p[0]-bw,p[1]-h,bw,h);
     g.fillStyle=hot?'#c7850e':'#38485a';g.fillRect(p[0],p[1]-h,bw,h);
     hits.push({x:p[0],y0:p[1]-h-3,y1:p[1],j});
   });
