@@ -16,11 +16,13 @@ a.cc-mark,.cc-page a.cc-mark,a.cc-mark:hover{color:var(--ink);text-decoration:no
 .cc-mark .c2{background:var(--accent);color:var(--accent-ink);padding:.1em .2em .06em}
 a.cc-mark.light,.cc-mark.light{color:var(--accent-ink)}
 .cc-mark.light .c2{background:var(--accent-ink);color:var(--accent)}
-.cc-mark.stack{display:inline-grid;grid-template-columns:auto auto;gap:.08em .22em;align-items:center;font-size:64px;line-height:.86}
-.cc-mark.stack .c1{grid-column:1}
-.cc-mark.stack .c2{grid-column:1;padding:.07em .14em .02em}
-.cc-mark.stack .tag{grid-column:2;grid-row:2;font:500 .2em/1.6 var(--mono);letter-spacing:.18em;color:var(--mute)}
-.cc-mark .tag{white-space:pre}
+.cc-mark .cc-ic{height:1.5em;width:auto;flex:none;margin-right:.08em}
+.cc-mark.stack{display:inline-grid;grid-template-columns:auto auto auto;gap:.08em .2em;align-items:center;font-size:64px;line-height:.86}
+.cc-mark.stack .cc-ic{grid-column:1;grid-row:1 / 3;height:2.05em;margin-right:.1em}
+.cc-mark.stack .c1{grid-column:2;grid-row:1}
+.cc-mark.stack .c2{grid-column:2;grid-row:2;padding:.07em .14em .02em}
+.cc-mark.stack .cc-tag{grid-column:3;grid-row:2;font:500 .2em/1.6 var(--mono);letter-spacing:.18em;color:var(--mute)}
+.cc-mark .cc-tag{white-space:pre}
 
 /* Account bar above the app pages */
 .cc-bar{background:#0e1218;border-bottom:1px solid var(--line);position:relative;z-index:6}

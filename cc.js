@@ -8,7 +8,7 @@ CC.configured = /^https:\/\//.test(SB_URL) && SB_KEY.length > 20;
 CC.sb = CC.configured && window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 CC.esc = esc;
-CC.STACK = '<a class="cc-mark stack" href="index.html" aria-label="Contract Connect home"><span class="c1">Contract</span><span class="c2">Connect</span><span class="tag">FIND\nBID\nWIN</span></a>';
+CC.STACK = '<a class="cc-mark stack" href="index.html" aria-label="Contract Connect home"><img class="cc-ic" src="assets/icon.png" alt=""><span class="c1">Contract</span><span class="c2">Connect</span><span class="cc-tag">FIND\nBID\nWIN</span></a>';
 CC.REGIONS = {wc:{name:'Westchester', page:'westchester.html', unit:'towns'}, nyc:{name:'New York City', page:'nyc.html', unit:'boroughs'}};
 
 function notReady(){
@@ -67,7 +67,7 @@ CC.accountBar = (current, profile) => {
   bar.className = 'cc-bar';
   const n = r => profile.areas.filter(a=>a.startsWith(r+':')).length;
   bar.innerHTML = `<div class="wrap cc-bar-in">
-    <a class="cc-mark" href="${CC.home(profile.areas)}" aria-label="Contract Connect home"><span class="c1">Contract</span><span class="c2">Connect</span></a>
+    <a class="cc-mark" href="${CC.home(profile.areas)}" aria-label="Contract Connect home"><img class="cc-ic" src="assets/icon.png" alt=""><span class="c1">Contract</span><span class="c2">Connect</span></a>
     <nav>${Object.entries(CC.REGIONS).map(([k,r])=>`<a href="${r.page}" class="${k===current?'on':''}">${r.name}<i>${n(k)}</i></a>`).join('')}
       <a href="areas.html" class="${current==='areas'?'on':''}">My areas</a>
       <button type="button" id="cc-out">Log out</button></nav></div>`;

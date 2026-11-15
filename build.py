@@ -18,7 +18,18 @@ SRC = R / "src"
 FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
          '<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">\n')
 SB = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n<script src="cc.js"></script>\n'
-CC_HEAD = FONTS + '<link rel="stylesheet" href="cc.css">\n' + SB
+ICONS = ('<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">\n'
+         '<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">\n'
+         '<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">\n<meta name="theme-color" content="#141a22">\n')
+SITE = "https://rezcagroup.github.io/westchester-lead-machine/"
+# Link previews (texts, Slack, social posts) for the landing page.
+SHARE = ('<meta property="og:type" content="website">\n<meta property="og:site_name" content="Contract Connect">\n'
+         '<meta property="og:title" content="Contract Connect: find the job before everyone else bids it">\n'
+         '<meta property="og:description" content="Early private construction leads for Westchester and NYC, sized for your trade, with who to call.">\n'
+         f'<meta property="og:url" content="{SITE}">\n<meta property="og:image" content="{SITE}assets/og-image.png">\n'
+         '<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n'
+         '<meta name="twitter:card" content="summary_large_image">\n')
+CC_HEAD = ICONS + FONTS + '<link rel="stylesheet" href="cc.css">\n' + SB
 
 
 def write(out, text):
@@ -37,7 +48,7 @@ def app(out, title, body, script, region, swaps):
         body_html = body_html.replace("__PULLED__", re.search(r'const PULLED = "([^"]*)";', js).group(1))
     head = (SRC / "head.html").read_text().replace("Westchester Construction Lead Machine", title)
     head = head.replace("family=Barlow+Condensed:wght@600;700;800&", "family=Barlow+Condensed:wght@600;700;800;900&")
-    head += '<link rel="stylesheet" href="cc.css">\n' + SB
+    head += ICONS + '<link rel="stylesheet" href="cc.css">\n' + SB
     write(out, head + (SRC / "css.txt").read_text() + "\n</head>\n" + body_html
           + f"<script>\nCC.boot('{region}', function(D){{\n" + js + "\n});\n</script>\n</body>\n</html>\n")
 
@@ -62,7 +73,9 @@ if not (url and key):
     print("Note: site_config.json has no Supabase URL/key yet; sign-in pages will say accounts aren't switched on.")
 write("cc.js", (SRC / "cc.js").read_text().replace("__SB_URL__", url).replace("__SB_KEY__", key))
 write("cc.css", (SRC / "cc.css").read_text())
-write("index.html", (SRC / "landing.html").read_text().replace("family=Barlow+Condensed:wght@600;700;800&", "family=Barlow+Condensed:wght@600;700;800;900&"))
+landing = (SRC / "landing.html").read_text()
+landing = landing.replace('<link rel="stylesheet" href="cc.css">', ICONS + SHARE + '<link rel="stylesheet" href="cc.css">', 1)
+write("index.html", landing.replace("family=Barlow+Condensed:wght@600;700;800&", "family=Barlow+Condensed:wght@600;700;800;900&"))
 for page in ("login.html", "areas.html"):
     write(page, (SRC / page).read_text().replace("<!--CC_HEAD-->", CC_HEAD))
 app("westchester.html", "Westchester · Contract Connect", "body.html", "script.js", "wc", [

@@ -59,6 +59,7 @@ jobs:
           python3 build.py
           mkdir _site
           cp index.html login.html areas.html westchester.html nyc.html cc.js cc.css _site/
+          cp -r assets _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
