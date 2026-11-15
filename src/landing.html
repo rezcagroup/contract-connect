@@ -233,7 +233,7 @@ footer .cc-mark.stack{font-size:40px}
     <div class="wrap">
       <div class="eyebrow">Coverage</div>
       <h2>Only the towns you work in</h2>
-      <p class="intro">Turn on just the places you want to hear about. Here's where projects have been filed in the past year.</p>
+      <p class="intro">Turn on just the places you want to hear about. All of Westchester County and all five boroughs are covered.</p>
       <h3>New York City <span class="count">5 boroughs</span></h3>
       <div class="chips" style="margin-bottom:28px">
         <span class="chip">Manhattan</span><span class="chip">Brooklyn</span><span class="chip">Queens</span><span class="chip">The Bronx</span><span class="chip">Staten Island</span>
@@ -285,9 +285,9 @@ WIN</span></a><span>© <span id="yr"></span> Contract Connect</span></span>
 </footer>
 
 <script>
-const WC_TOWNS = __WC_TOWNS__;  // filled by build.py from the current Westchester data
+const WC_TOWNS = __WC_TOWNS__;  // filled by build.py: every area on the county map
 document.getElementById('wc-towns').innerHTML = WC_TOWNS.map(t => `<span class="chip">${t}</span>`).join('');
-document.getElementById('wc-count').textContent = WC_TOWNS.length + ' cities, towns and villages';
+document.getElementById('wc-count').textContent = 'all 45 cities, towns and villages';
 document.getElementById('yr').textContent = new Date().getFullYear();
 </script>
 </body>

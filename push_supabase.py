@@ -104,8 +104,9 @@ def main():
         return
     _, wc_counts = westchester()
     nyc_counts = nyc()
-    # The area picker's list. Towns with contacts but no current projects are listed too, with 0.
-    towns = sorted(set(wc_counts) | set(load("contacts.json", {})))
+    # The area picker's list: every area on the county map (43 areas covering all 45 municipalities), so people can
+    # pick a town before its next project is filed. Towns with no current projects show 0.
+    towns = sorted(set(wc_counts) | set(load("contacts.json", {})) | set(load("shapes.json", {}).get("wc", {})))
     boros = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"]
     areas = {
         "wc": [{"area": "wc:" + t, "name": t, "count": wc_counts.get(t, 0)} for t in towns],

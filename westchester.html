@@ -221,7 +221,7 @@ table.mini td{padding:6px 8px}
         <li><b>Private work.</b> Hospitals, schools, government buildings, utilities and parks come out. They go to public bid.</li>
         <li><b>A real building.</b> At least 5,000 sq ft of floor area or 5 housing units. Some referrals give units but no floor area. Those are tagged NO FLOOR AREA and get no dollar estimate rather than a guessed one.</li>
         <li><b>Local-builder size.</b> Under 250,000 sq ft, or 200 units or fewer where no floor area is given. The 28-story towers and the Westchester Crossing megaproject go to regional GCs.</li>
-        <li><b>Just filed.</b> Filed in the last 30 days by default (change it on the Call list tab), so the project is just starting its local review.</li>
+        <li><b>Recently filed.</b> Filed in the last 90 days by default (change it on the Call list tab). Local review takes months, so these projects are still well ahead of a building permit. Anything from the last two weeks is marked NEW.</li>
       </ul>
       <h3>3 · Rank</h3>
       <p><b>Date filed</b> is the date on the county's referral record for the project, which is logged shortly after the town sends it over. The town's own application date can be a few weeks earlier.</p>
@@ -267,7 +267,7 @@ const TRADES = {
   windows:{n:'Windows & doors',s:.05,need:'windows, storefront and exterior doors'},
   paint:{n:'Painting',s:.03,need:'interior and exterior painting, coatings and wall finishes'}
 };
-const A = {psf:450, trades:['concrete'], days:30};
+const A = {psf:450, trades:['concrete'], days:90};  // 90 days: referrals come months before a permit, and 30 days is only a handful county-wide
 try{const s=JSON.parse(localStorage.getItem('wcl-assume')||'null'); if(s){A.psf=s.psf||A.psf; if(Array.isArray(s.trades)){const t=s.trades.filter(k=>TRADES[k]);if(t.length)A.trades=t}else if(TRADES[s.trade])A.trades=[s.trade]; if([7,14,30,60,90,180].includes(s.days))A.days=s.days;}}catch(e){}
 if(D.trades&&D.trades.length){const t=D.trades.filter(k=>TRADES[k]);if(t.length)A.trades=t;}  // the account's trades win over this browser's
 const PUBLIC = /Institutional|Utilities|Recreation/;

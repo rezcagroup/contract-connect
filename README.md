@@ -55,7 +55,7 @@ The Westchester app is `westchester.html` (built from `src/body.html` and `src/s
 
 ## What it does
 
-- **Call list:** private projects with a real building (5,000+ sq ft or 5+ units), under 250,000 sq ft, filed in the last 30 days by default. Newest first, NEW tag for the last 14 days.
+- **Call list:** private projects with a real building (5,000+ sq ft or 5+ units), under 250,000 sq ft, filed in the last 90 days by default (NYC: 30). Newest first, NEW tag for the last 14 days.
 - **Trade picker:** general contractor, framing and carpentry, concrete, site work, HVAC, electrical, plumbing, roofing, windows and doors, painting. Every estimate, scope and email switches to the selected trades (several can be picked; their estimates add up).
 - **Project pages:** full filing description, county review comments, per-trade scope with quotes from the filing, project team found in public records, links to the filing (county PDF where attached), town contacts, and two outreach emails.
 - **By town:** planning contacts and phone numbers per municipality.
