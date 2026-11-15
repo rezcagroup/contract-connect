@@ -1,0 +1,13 @@
+# Python caches
+__pycache__/
+*.pyc
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local secrets (the Supabase secret key belongs only in GitHub secrets)
+.env
+.env.*
