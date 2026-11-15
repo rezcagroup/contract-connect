@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My areas · Contract Connect</title>
+<!--CC_HEAD-->
+<style>
+.areas-wrap{max-width:1000px;margin:0 auto;padding:36px 20px 120px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.areas-wrap h1{font:800 clamp(32px,4.5vw,46px)/1 var(--display);text-transform:uppercase;margin:8px 0 10px}
+.areas-wrap .lede{color:var(--mute);max-width:60ch;margin:0 0 30px}
+.region{background:var(--panel);border:1px solid var(--line);margin-bottom:22px}
+.region-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 18px;border-bottom:1px solid var(--line)}
+.region-head h2{font:800 24px/1 var(--display);text-transform:uppercase;margin:0}
+.region-head h2 small{font:500 12px var(--mono);letter-spacing:.08em;color:var(--mute);margin-left:10px}
+.region-head .acts{display:flex;gap:6px}
+.region-head .acts button{font:600 13px var(--display);letter-spacing:.07em;text-transform:uppercase;background:none;border:1px solid var(--line);color:var(--mute);padding:6px 10px;cursor:pointer}
+.region-head .acts button:hover{color:var(--ink);border-color:var(--ink)}
+.filter{padding:12px 18px 0}
+.filter input{width:100%;max-width:320px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:9px 11px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;padding:14px 18px 18px}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);background:var(--bg);padding:10px 12px;cursor:pointer;user-select:none}
+.tog:hover{border-color:var(--mute)}
+.tog input{position:absolute;opacity:0;pointer-events:none}
+.tog .nm{font:700 16px/1.1 var(--display);letter-spacing:.04em;text-transform:uppercase}
+.tog .ct{display:block;font:500 11px var(--mono);color:var(--mute);margin-top:3px}
+.tog .sw{flex:none;width:36px;height:20px;border-radius:10px;background:var(--line);position:relative;transition:background .15s}
+.tog .sw:after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--mute);transition:transform .15s,background .15s}
+.tog.on{border-color:var(--accent)}
+.tog.on .sw{background:var(--accent)}
+.tog.on .sw:after{transform:translateX(16px);background:var(--accent-ink)}
+.tog:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.savebar{position:fixed;left:0;right:0;bottom:0;background:#0e1218;border-top:1px solid var(--line);z-index:5}
+.savebar .in{max-width:1000px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.savebar .sum{color:var(--mute);font-size:14px}
+.savebar .sum b{color:var(--ink)}
+.savebar .msg{font-size:14px}
+.savebar .msg.err{color:#ffb4ad}
+.savebar .msg.ok{color:#bff0d2}
+</style>
+</head>
+<body class="cc-page">
+<div class="areas-wrap" id="page">
+  <div class="cc-loading">Loading…</div>
+</div>
+<script>
+(async function(){
+  const $ = s => document.querySelector(s), esc = CC.esc;
+  let user, profile, list;
+  try { user = await CC.requireUser(); profile = await CC.profile(); list = await CC.meta('areas'); }
+  catch(e){ if(!/not configured|signed out/.test(e.message)) $('#page').innerHTML = `<p class="cc-msg err">${esc(e.message)}</p>`; return; }
+  CC.accountBar('areas', profile);
+  const first = !profile.areas.length;
+  const picked = new Set(profile.areas);
+  if(!list){ $('#page').innerHTML = '<div class="cc-empty"><h2>Areas are being set up</h2><p>Project data hasn\'t been loaded yet. Check back after the next morning update.</p></div>'; return; }
+
+  const region = (key, title, unit, rows, filter) => `
+    <section class="region" data-r="${key}">
+      <div class="region-head">
+        <h2>${title}<small>${rows.length} ${unit}</small></h2>
+        <div class="acts"><button type="button" data-all="${key}">Select all</button><button type="button" data-none="${key}">Clear</button></div>
+      </div>
+      ${filter ? `<div class="filter"><input type="search" placeholder="Find a town" data-f="${key}" aria-label="Find a town"></div>` : ''}
+      <div class="grid">${rows.map(a => `
+        <label class="tog ${picked.has(a.area)?'on':''}" data-name="${esc(a.name.toLowerCase())}">
+          <input type="checkbox" value="${esc(a.area)}" ${picked.has(a.area)?'checked':''}>
+          <span><span class="nm">${esc(a.name)}</span><span class="ct">${a.count} project${a.count===1?'':'s'}</span></span>
+          <span class="sw" aria-hidden="true"></span>
+        </label>`).join('')}</div>
+    </section>`;
+
+  $('#page').innerHTML = `
+    <div class="eyebrow">${first ? 'Step 2 of 2' : 'Your account'}</div>
+    <h1>${first ? 'Pick the areas you work in' : 'My areas'}</h1>
+    <p class="lede">Turn on each town and borough you want projects from. Your call list only shows these, and you can change them any time.</p>
+    ${region('nyc', 'New York City', 'boroughs', list.nyc||[], false)}
+    ${region('wc', 'Westchester County', 'towns', list.wc||[], true)}
+    <div class="savebar"><div class="in">
+      <span class="sum" id="sum"></span><span class="msg" id="msg" role="status"></span>
+      <button class="cc-btn" id="save" type="button">${first ? 'Save and see my projects' : 'Save changes'}</button>
+    </div></div>`;
+
+  const boxes = () => [...document.querySelectorAll('.tog input')];
+  function sync(){
+    boxes().forEach(b => b.closest('.tog').classList.toggle('on', b.checked));
+    const on = boxes().filter(b=>b.checked);
+    const n = r => on.filter(b=>b.value.startsWith(r+':')).length;
+    const projects = on.reduce((s,b)=>s+(+b.closest('.tog').querySelector('.ct').textContent.split(' ')[0]||0),0);
+    $('#sum').innerHTML = on.length ? `<b>${n('wc')}</b> Westchester towns · <b>${n('nyc')}</b> boroughs · <b>${projects.toLocaleString()}</b> projects` : 'Nothing picked yet';
+    $('#msg').textContent = '';
+  }
+  document.addEventListener('change', e => { if(e.target.matches('.tog input')) sync(); });
+  document.querySelectorAll('[data-all],[data-none]').forEach(btn => btn.onclick = () => {
+    const r = btn.dataset.all || btn.dataset.none;
+    document.querySelectorAll(`[data-r="${r}"] .tog:not(.hide) input`).forEach(b => b.checked = !!btn.dataset.all);
+    sync();
+  });
+  document.querySelectorAll('[data-f]').forEach(inp => inp.oninput = () => {
+    const q = inp.value.trim().toLowerCase();
+    document.querySelectorAll(`[data-r="${inp.dataset.f}"] .tog`).forEach(t => t.classList.toggle('hide', !!q && !t.dataset.name.includes(q)));
+  });
+  sync();
+
+  $('#save').onclick = async () => {
+    const areas = boxes().filter(b=>b.checked).map(b=>b.value);
+    const msg = $('#msg'), btn = $('#save');
+    if(!areas.length){ msg.className = 'msg err'; msg.textContent = 'Turn on at least one town or borough.'; return; }
+    btn.disabled = true;
+    try {
+      await CC.saveAreas(user, areas);
+      if(first) return location.replace(CC.home(areas));
+      msg.className = 'msg ok'; msg.textContent = 'Saved.';
+      document.querySelectorAll('.cc-bar').forEach(b=>b.remove());
+      CC.accountBar('areas', Object.assign(profile, {areas}));
+    } catch(e){ msg.className = 'msg err'; msg.textContent = 'Could not save: ' + e.message; }
+    btn.disabled = false;
+  };
+})();
+</script>
+</body>
+</html>

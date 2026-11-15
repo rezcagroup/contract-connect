@@ -1,5 +1,7 @@
-# Pulls fresh NYC DOB filings and Westchester County referrals every morning (the schedule fires several times a day because GitHub delays cron runs), rebuilds both pages
-# and publishes them with GitHub Pages.
+# Pulls fresh NYC DOB filings and Westchester County referrals every morning (the schedule fires several times a day because GitHub delays cron runs),
+# uploads them to Supabase (where signed-in users read only the areas they picked), rebuilds the Contract Connect pages and publishes them with GitHub Pages.
+# The published pages hold no project data.
+# Needs repository secrets SUPABASE_URL and SUPABASE_SECRET_KEY (Settings -> Secrets and variables -> Actions).
 # Needs: this file on the default branch, and Settings -> Pages -> Source set to "GitHub Actions".
 # Nothing is committed back to the repo; the refreshed pages only go to the published site.
 name: Refresh and publish
@@ -45,11 +47,18 @@ jobs:
         # If the county service is down, publish with the Westchester data already in the repo.
         continue-on-error: true
         run: python3 pull_westchester.py
+      - name: Upload data to Supabase
+        # If Supabase is unreachable, users keep yesterday's data and the pages still publish.
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 push_supabase.py
       - name: Build pages
         run: |
           python3 build.py
           mkdir _site
-          cp index.html nyc.html _site/
+          cp index.html login.html areas.html westchester.html nyc.html cc.js cc.css _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

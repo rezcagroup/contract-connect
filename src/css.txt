@@ -1,8 +1,8 @@
 <style>
 :root{
   /* Layout: a job-site board for Westchester. Sticky tab bar, summary first, detail on drill-in. Single dark theme by choice. */
-  --bg:#12161c; --panel:#1a2029; --line:#2c3542; --ink:#e8ecf1; --mute:#8f9bab;
-  --accent:#ffb020; --accent-ink:#1a1202; --steel:#5f7a96; --good:#5fc48a; --warn:#f2c14e; --bad:#e2665c;
+  --bg:#141a22; --panel:#1a2029; --line:#2c3542; --ink:#eef1f5; --mute:#8f9bab;
+  --accent:#f5a623; --accent-ink:#141a22; --steel:#5f7a96; --good:#5fc48a; --warn:#f2c14e; --bad:#e2665c;
   --display:"Barlow Condensed","Arial Narrow",sans-serif;
   --body:"IBM Plex Sans",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,monospace;

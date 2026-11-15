@@ -1,0 +1,70 @@
+/* Contract Connect: shared styles for the logo, the account bar, and the log-in and area pages. */
+:root{
+  --bg:#141a22; --panel:#1a2029; --line:#2c3542; --ink:#eef1f5; --mute:#8f9bab;
+  --accent:#f5a623; --accent-ink:#141a22; --good:#5fc48a; --bad:#e2665c;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+
+*,*:before,*:after{box-sizing:border-box}
+
+/* Logo, rebuilt in type so it stays sharp. One line: .cc-mark. Stacked with tagline: .cc-mark.stack */
+.cc-mark{display:inline-flex;align-items:center;gap:.28em;font:900 22px/1 var(--display);letter-spacing:.01em;text-transform:uppercase;color:var(--ink);text-decoration:none;white-space:nowrap}
+a.cc-mark,.cc-page a.cc-mark,a.cc-mark:hover{color:var(--ink);text-decoration:none}
+.cc-bar .wrap,.cc-page .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.cc-mark .c2{background:var(--accent);color:var(--accent-ink);padding:.1em .2em .06em}
+a.cc-mark.light,.cc-mark.light{color:var(--accent-ink)}
+.cc-mark.light .c2{background:var(--accent-ink);color:var(--accent)}
+.cc-mark.stack{display:inline-grid;grid-template-columns:auto auto;gap:.08em .22em;align-items:center;font-size:64px;line-height:.86}
+.cc-mark.stack .c1{grid-column:1}
+.cc-mark.stack .c2{grid-column:1;padding:.07em .14em .02em}
+.cc-mark.stack .tag{grid-column:2;grid-row:2;font:500 .2em/1.6 var(--mono);letter-spacing:.18em;color:var(--mute)}
+.cc-mark .tag{white-space:pre}
+
+/* Account bar above the app pages */
+.cc-bar{background:#0e1218;border-bottom:1px solid var(--line);position:relative;z-index:6}
+.cc-bar-in{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:50px;flex-wrap:wrap}
+.cc-bar .cc-mark{font-size:19px}
+.cc-bar nav{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.cc-bar nav a,.cc-bar nav button{font:700 14px var(--display);letter-spacing:.07em;text-transform:uppercase;color:var(--mute);text-decoration:none;background:none;border:0;padding:7px 10px;cursor:pointer}
+.cc-bar nav a:hover,.cc-bar nav button:hover{color:var(--ink)}
+.cc-bar nav a.on{color:var(--accent)}
+@media (max-width:600px){.cc-bar-in{padding-top:6px;padding-bottom:6px}.cc-bar nav{gap:0;margin-left:-10px}.cc-bar nav a,.cc-bar nav button{font-size:13px;padding:6px 8px}}
+.cc-bar nav i{font:500 11px var(--mono);font-style:normal;margin-left:5px;padding:1px 5px;border:1px solid var(--line);color:var(--mute)}
+
+/* Messages inside an app page */
+.cc-loading{padding:40px 0;color:var(--mute);font:500 13px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.cc-empty{padding:70px 0;max-width:560px}
+.cc-empty h2{margin-bottom:10px}
+.cc-empty p{color:var(--mute)}
+
+/* Buttons and forms */
+.cc-btn{display:inline-block;font:700 16px var(--display);letter-spacing:.08em;text-transform:uppercase;text-decoration:none;padding:12px 20px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.cc-btn:hover{filter:brightness(1.08)}
+.cc-btn:disabled{opacity:.6;cursor:wait}
+.cc-btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.cc-btn.ghost:hover{border-color:var(--ink)}
+.cc-btn.block{display:block;width:100%;text-align:center}
+
+/* Centered card pages (log in, sign up) */
+.cc-page{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:15px/1.5 var(--body)}
+.cc-page a{color:var(--accent)}
+.cc-center{min-height:100vh;display:grid;place-items:center;padding:30px 18px}
+.cc-card{width:100%;max-width:430px;background:var(--panel);border:1px solid var(--line);padding:30px}
+.cc-card .cc-mark.stack{font-size:46px;margin-bottom:22px;text-decoration:none}
+.cc-card h1{font:800 28px/1.05 var(--display);text-transform:uppercase;margin:0 0 6px}
+.cc-card p{color:var(--mute);margin:0 0 16px}
+.cc-tabs{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);margin:0 0 20px}
+.cc-tabs button{font:700 15px var(--display);letter-spacing:.07em;text-transform:uppercase;background:none;border:0;color:var(--mute);padding:10px;cursor:pointer}
+.cc-tabs button.on{background:var(--accent);color:var(--accent-ink)}
+.cc-field{display:block;margin-bottom:14px}
+.cc-field span{display:block;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:5px}
+.cc-field input{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:11px 12px}
+.cc-field input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+.cc-msg{font-size:14px;padding:10px 12px;margin:0 0 14px;border:1px solid}
+.cc-msg.err{color:#ffb4ad;border-color:var(--bad);background:rgba(226,102,92,.08)}
+.cc-msg.ok{color:#bff0d2;border-color:var(--good);background:rgba(95,196,138,.08)}
+.cc-small{font-size:13px;color:var(--mute);margin-top:16px;text-align:center}
+.cc-linkbtn{background:none;border:0;padding:0;color:var(--accent);font:inherit;cursor:pointer;text-decoration:underline}
+.hide{display:none!important}

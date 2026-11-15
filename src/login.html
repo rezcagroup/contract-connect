@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in · Contract Connect</title>
+<!--CC_HEAD-->
+</head>
+<body class="cc-page">
+<div class="cc-center">
+  <div class="cc-card">
+    <div id="brand"></div>
+
+    <!-- Sign up / Log in -->
+    <div id="v-auth">
+      <div class="cc-tabs" role="tablist">
+        <button type="button" id="t-signup" role="tab">Sign up</button>
+        <button type="button" id="t-login" role="tab">Log in</button>
+      </div>
+      <h1 id="a-title"></h1>
+      <p id="a-sub"></p>
+      <div id="a-msg" class="cc-msg hide" role="alert"></div>
+      <form id="f-auth" novalidate>
+        <label class="cc-field"><span>Email</span><input type="email" id="email" autocomplete="email" required></label>
+        <label class="cc-field"><span>Password</span><input type="password" id="pw" required minlength="8"></label>
+        <button class="cc-btn block" id="a-go" type="submit"></button>
+      </form>
+      <div class="cc-small" id="forgot-row"><button type="button" class="cc-linkbtn" id="forgot">Forgot your password?</button></div>
+    </div>
+
+    <!-- Forgot password -->
+    <div id="v-forgot" class="hide">
+      <h1>Reset your password</h1>
+      <p>Enter your email and we'll send you a link to set a new password.</p>
+      <div id="r-msg" class="cc-msg hide" role="alert"></div>
+      <form id="f-forgot" novalidate>
+        <label class="cc-field"><span>Email</span><input type="email" id="r-email" autocomplete="email" required></label>
+        <button class="cc-btn block" type="submit">Send reset link</button>
+      </form>
+      <div class="cc-small"><button type="button" class="cc-linkbtn" id="back">← Back to log in</button></div>
+    </div>
+
+    <!-- New password, after following the email link -->
+    <div id="v-newpw" class="hide">
+      <h1>Set a new password</h1>
+      <p>Choose a password with at least 8 characters.</p>
+      <div id="n-msg" class="cc-msg hide" role="alert"></div>
+      <form id="f-newpw" novalidate>
+        <label class="cc-field"><span>New password</span><input type="password" id="n-pw" autocomplete="new-password" required minlength="8"></label>
+        <button class="cc-btn block" type="submit">Save password</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+(async function(){
+  const $ = s => document.querySelector(s);
+  $('#brand').innerHTML = CC.STACK;
+  if(!CC.sb) return CC.notReady();
+  const params = new URLSearchParams(location.search);
+  const next = (params.get('next')||'').replace(/^[^a-z]+/i,'');      // only a page of this site
+  const safeNext = /^(westchester|nyc|areas)\.html(#[\w-]*)?$/.test(next) ? next : '';
+  const base = location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,'');
+
+  const show = id => ['#v-auth','#v-forgot','#v-newpw'].forEach(v=>$(v).classList.toggle('hide', v!==id));
+  const say = (el, text, ok) => { el.textContent = text; el.className = 'cc-msg ' + (ok?'ok':'err'); };
+  const busy = (btn, on, label) => { btn.disabled = on; if(label) btn.textContent = label; };
+
+  let mode = location.hash === '#signup' ? 'signup' : 'login';
+  function setMode(m){
+    mode = m;
+    $('#t-signup').classList.toggle('on', m==='signup'); $('#t-login').classList.toggle('on', m==='login');
+    $('#t-signup').setAttribute('aria-selected', m==='signup'); $('#t-login').setAttribute('aria-selected', m==='login');
+    $('#a-title').textContent = m==='signup' ? 'Create your account' : 'Welcome back';
+    $('#a-sub').textContent = m==='signup' ? 'Then pick the towns and boroughs you work in.' : 'Log in to see your call list.';
+    $('#a-go').textContent = m==='signup' ? 'Create account' : 'Log in';
+    $('#pw').autocomplete = m==='signup' ? 'new-password' : 'current-password';
+    $('#forgot-row').classList.toggle('hide', m==='signup');
+    $('#a-msg').classList.add('hide');
+    history.replaceState(null, '', location.pathname + location.search + (m==='signup' ? '#signup' : ''));
+  }
+  $('#t-signup').onclick = () => setMode('signup');
+  $('#t-login').onclick = () => setMode('login');
+  $('#forgot').onclick = () => { $('#r-email').value = $('#email').value; show('#v-forgot'); };
+  $('#back').onclick = () => { show('#v-auth'); setMode('login'); };
+
+  async function goIn(){
+    const p = await CC.profile();
+    location.replace(safeNext && p.areas.length ? safeNext : CC.home(p.areas));
+  }
+
+  // Coming back from a password-reset email: Supabase signs the user in and says so.
+  let recovering = params.has('reset');
+  CC.sb.auth.onAuthStateChange(ev => { if(ev === 'PASSWORD_RECOVERY'){ recovering = true; show('#v-newpw'); } });
+  if(recovering) show('#v-newpw');
+  else {
+    setMode(mode);
+    if(await CC.session()) return goIn();
+  }
+
+  $('#f-auth').onsubmit = async e => {
+    e.preventDefault();
+    const email = $('#email').value.trim(), password = $('#pw').value, btn = $('#a-go'), label = btn.textContent;
+    if(!/^\S+@\S+\.\S+$/.test(email)) return say($('#a-msg'), 'Enter a valid email address.');
+    if(password.length < 8) return say($('#a-msg'), 'Passwords need at least 8 characters.');
+    busy(btn, true, mode==='signup' ? 'Creating account…' : 'Logging in…');
+    try {
+      if(mode === 'signup'){
+        const {data, error} = await CC.sb.auth.signUp({email, password, options:{emailRedirectTo: base + 'areas.html'}});
+        if(error) throw error;
+        if(data.session) return location.replace('areas.html');
+        say($('#a-msg'), `Check ${email} for a confirmation link. Open it to finish setting up your account.`, true);
+        $('#f-auth').reset();
+      } else {
+        const {error} = await CC.sb.auth.signInWithPassword({email, password});
+        if(error) throw error;
+        return goIn();
+      }
+    } catch(err){
+      say($('#a-msg'), /invalid login/i.test(err.message) ? 'That email and password don\'t match. Try again or reset your password.'
+                     : /not confirmed/i.test(err.message) ? 'Please confirm your email first: check your inbox for the link.'
+                     : /already registered/i.test(err.message) ? 'There\'s already an account with that email. Log in instead.'
+                     : err.message);
+    }
+    busy(btn, false, label);
+  };
+
+  $('#f-forgot').onsubmit = async e => {
+    e.preventDefault();
+    const email = $('#r-email').value.trim();
+    if(!/^\S+@\S+\.\S+$/.test(email)) return say($('#r-msg'), 'Enter a valid email address.');
+    const {error} = await CC.sb.auth.resetPasswordForEmail(email, {redirectTo: base + 'login.html?reset=1'});
+    if(error) return say($('#r-msg'), error.message);
+    say($('#r-msg'), `If there's an account for ${email}, a reset link is on its way.`, true);
+  };
+
+  $('#f-newpw').onsubmit = async e => {
+    e.preventDefault();
+    const password = $('#n-pw').value;
+    if(password.length < 8) return say($('#n-msg'), 'Passwords need at least 8 characters.');
+    const {error} = await CC.sb.auth.updateUser({password});
+    if(error) return say($('#n-msg'), /session/i.test(error.message) ? 'This reset link has expired. Request a new one.' : error.message);
+    say($('#n-msg'), 'Password saved. Taking you to your call list…', true);
+    setTimeout(goIn, 900);
+  };
+})();
+</script>
+</body>
+</html>

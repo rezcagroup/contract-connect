@@ -1,25 +1,76 @@
-"""Assemble index.html (Westchester) and nyc.html (five boroughs) from src/ and data/. Run: python3 build.py"""
-import json, re
+"""Build the Contract Connect site from src/. Run: python3 build.py
+
+Pages (written to the repo root and published by the daily GitHub job):
+  index.html        public landing page
+  login.html        sign up, log in, password reset
+  areas.html        pick towns and boroughs
+  westchester.html  Westchester app (County Planning Board referrals)
+  nyc.html          NYC app (Department of Buildings filings)
+  cc.js, cc.css     shared sign-in code and styles
+
+No project data goes into these files. The app pages load it after sign-in from Supabase, which returns only the
+areas the user picked (see supabase/schema.sql and push_supabase.py). Supabase settings come from site_config.json.
+"""
+import base64, json, re
 from pathlib import Path
 R = Path(__file__).parent
+SRC = R / "src"
+FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+         '<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">\n')
+SB = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n<script src="cc.js"></script>\n'
+CC_HEAD = FONTS + '<link rel="stylesheet" href="cc.css">\n' + SB
 
 
-def page(out, title, body, script, data):
-    js = (R/"src"/script).read_text()
-    for key, f in data:
-        src = R/"data"/f
-        js = js.replace(key, (src.read_text() if src.exists() else "{}").replace("</", "<\\/"))
-    body_html = (R/"src"/body).read_text()
-    if "__TOWNS__" in body_html:  # Westchester header and source note: fill from the data, not typed-in numbers
-        towns = len({r[3] for r in json.loads((R/"data/data.json").read_text())})
-        pulled = re.search(r'const PULLED = "([^"]*)";', js).group(1)
-        body_html = body_html.replace("__TOWNS__", str(towns)).replace("__PULLED__", pulled)
-    head = (R/"src/head.html").read_text().replace("Westchester Construction Lead Machine", title)
-    html = head + (R/"src/css.txt").read_text() + "\n</head>\n" + body_html + "<script>\n" + js + "</script>\n</body>\n</html>\n"
-    (R/out).write_text(html)
-    print("Built", out, len(html), "bytes")
+def write(out, text):
+    (R / out).write_text(text)
+    print("Built", out, len(text), "bytes")
 
 
-page("index.html", "Westchester Construction Lead Machine", "body.html", "script.js",
-     [("__DATA__", "data.json"), ("__CONTACTS__", "contacts.json"), ("__ATT__", "att.json"), ("__TEAM__", "team.json"), ("__EV__", "ev.json"), ("__PERMITS__", "permits.json")])
-page("nyc.html", "NYC Construction Lead Machine", "nyc_body.html", "nyc_script.js", [("__NYC__", "nyc.json")])
+def app(out, title, body, script, region, swaps):
+    """An app page: the old page's markup and styles, with its script wrapped to run once CC.boot has the user's data."""
+    js = (SRC / script).read_text()
+    for old, new in swaps:
+        assert old in js, f"{script}: expected {old!r}"
+        js = js.replace(old, new)
+    body_html = (SRC / body).read_text()
+    if "__PULLED__" in body_html:
+        body_html = body_html.replace("__PULLED__", re.search(r'const PULLED = "([^"]*)";', js).group(1))
+    head = (SRC / "head.html").read_text().replace("Westchester Construction Lead Machine", title)
+    head = head.replace("family=Barlow+Condensed:wght@600;700;800&", "family=Barlow+Condensed:wght@600;700;800;900&")
+    head += '<link rel="stylesheet" href="cc.css">\n' + SB
+    write(out, head + (SRC / "css.txt").read_text() + "\n</head>\n" + body_html
+          + f"<script>\nCC.boot('{region}', function(D){{\n" + js + "\n});\n</script>\n</body>\n</html>\n")
+
+
+cfg = json.loads((R / "site_config.json").read_text())
+url, key = cfg.get("supabase_url", "").strip(), cfg.get("supabase_publishable_key", "").strip()
+def is_secret(k):
+    if k.startswith("sb_secret_"):
+        return True
+    if k.startswith("eyJ") and k.count(".") == 2:  # legacy key: a JWT whose payload names its role
+        try:
+            part = k.split(".")[1]
+            return json.loads(base64.urlsafe_b64decode(part + "=" * (-len(part) % 4))).get("role") == "service_role"
+        except ValueError:
+            return False
+    return False
+
+
+if is_secret(key):
+    raise SystemExit("site_config.json holds a SECRET key. Use the publishable (anon) key; the secret key belongs only in GitHub secrets.")
+if not (url and key):
+    print("Note: site_config.json has no Supabase URL/key yet; sign-in pages will say accounts aren't switched on.")
+write("cc.js", (SRC / "cc.js").read_text().replace("__SB_URL__", url).replace("__SB_KEY__", key))
+write("cc.css", (SRC / "cc.css").read_text())
+write("index.html", (SRC / "landing.html").read_text().replace("family=Barlow+Condensed:wght@600;700;800&", "family=Barlow+Condensed:wght@600;700;800;900&"))
+for page in ("login.html", "areas.html"):
+    write(page, (SRC / page).read_text().replace("<!--CC_HEAD-->", CC_HEAD))
+app("westchester.html", "Westchester · Contract Connect", "body.html", "script.js", "wc", [
+    ("const RAW = __DATA__;", "const RAW = D.RAW;"), ("const CONTACTS = __CONTACTS__;", "const CONTACTS = D.CONTACTS;"),
+    ("const ATT = __ATT__;", "const ATT = D.ATT;"), ("const TEAM = __TEAM__;", "const TEAM = D.TEAM;"),
+    ("const EV = __EV__;", "const EV = D.EV;"), ("const PERMITS = __PERMITS__;", "const PERMITS = D.PERMITS;")])
+app("nyc.html", "New York City · Contract Connect", "nyc_body.html", "nyc_script.js", "nyc", [
+    ("const SRC = __NYC__;", "const SRC = D.NYC;"),
+    # The borough buttons show only the boroughs this user picked.
+    ("const BOROS = ['Manhattan','Brooklyn','Queens','Bronx','Staten Island'];",
+     "const BOROS = ['Manhattan','Brooklyn','Queens','Bronx','Staten Island'].filter(b=>D.areas.includes(b));")])
