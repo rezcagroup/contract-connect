@@ -10,7 +10,8 @@ const gsearch = q => "https://www.google.com/search?q="+encodeURIComponent(q);
 const PULLED = "11 Nov 2026";
 const TODAY = Date.UTC(2026,10,11);
 const TRADES = {
-  gc:{n:'GC / framing',s:.22,need:'general contracting, framing and carpentry'},
+  gc:{n:'General contractor',s:1,need:'general contracting'},  // s:1 = the full construction cost
+  frame:{n:'Framing & carpentry',s:.09,need:'framing, rough carpentry, sheathing and blocking'},
   concrete:{n:'Concrete',s:.08,need:'footings, foundation walls, slabs and site concrete'},
   site:{n:'Site work',s:.07,need:'clearing, excavation, utilities, drainage and paving'},
   hvac:{n:'HVAC',s:.10,need:'heating, cooling and ventilation'},
@@ -44,7 +45,12 @@ const tname = k => { const n=TRADES[k].n; return /^(GC|HVAC)/.test(n)?n:n.toLowe
 
 // Several trades can be selected (A.trades, in the order picked). With one trade these give exactly the old single-trade values.
 const tlabel = () => { const n=A.trades.map(tname); return n.length<3 ? n.join(' and ') : n.slice(0,-1).join(', ')+' and '+n[n.length-1]; };
-const TS = () => A.trades.length===1 ? TRADES[A.trades[0]] : {n:A.trades.map(k=>TRADES[k].n).join(' + '), s:A.trades.reduce((a,k)=>a+TRADES[k].s,0), need:A.trades.map(k=>TRADES[k].need).join('; ')};
+const TS = () => A.trades.length===1 ? TRADES[A.trades[0]] : {n:A.trades.map(k=>TRADES[k].n).join(' + '), s:A.trades.includes('gc')?1:A.trades.reduce((a,k)=>a+TRADES[k].s,0), need:A.trades.includes('gc')?TRADES.gc.need:A.trades.map(k=>TRADES[k].need).join('; ')};
+// A general contractor bids the whole job: their figure is the full construction cost, which already covers every other trade.
+const isGC = () => A.trades.includes('gc');
+const tdo = () => isGC() ? 'construction' : tlabel();          // "construction pricing", "of construction work"
+const tcol = () => isGC() ? 'construction value' : tlabel();   // column and headline labels: "Est. construction value"
+
 const sideOf = j => { const N=tradeNeeds(j); return A.trades.flatMap(k=>N[k].slice(0,A.trades.length>1?1:2)); };
 
 const jobs = RAW.map(raw=>{
@@ -62,7 +68,7 @@ const jobs = RAW.map(raw=>{
 function compute(){
   jobs.forEach(j=>{
     j.value = j.area*A.psf;
-    j.tv = A.trades.reduce((a,k)=>a+(k==='site' ? Math.max(j.value*TRADES[k].s, j.sqd*12) : j.value*TRADES[k].s),0);
+    j.tv = isGC() ? j.value : A.trades.reduce((a,k)=>a+(k==='site' ? Math.max(j.value*TRADES[k].s, j.sqd*12) : j.value*TRADES[k].s),0);
     j.c1 = !PUBLIC.test(j.use);
     j.c2 = j.c1 && (j.area>=5000 || j.units>=5);
     j.c3 = j.c2 && j.area<=250000 && !(j.noArea && j.units>MAX_UNITS);
@@ -102,6 +108,7 @@ function sheet(list){return ['Filed,Project,Town,Address,Sq ft,Units,Type,Town p
 const BOILER=/^(CPBP|Recycle|TDM|AFFO|UNIVERSAL|AIR|ZONE|Disp|Oth)$/;
 const KEYS={
   gc:/(\bstor(y|ies)\b|\bunits?\b|construct|build|erect|addition|renovat|demoli|amenit|courtyard|civic space|plaza|elevator)/i,
+  frame:/(fram|wood|timber|carpent|\bstuds?\b|partition|sheath|truss|joist|rafter|\bstor(y|ies)\b)/i,
   concrete:/(foundation|slab|concrete|parking|garage|deck|retaining|\bwalls?\b|podium|sidewalk|curb|\bpool|plaza|crosswalk|cellar|basement)/i,
   site:/(\bacres?\b|disturb|grad(e|ing)|excavat|demoli|parking|paving|driveway|stormwater|drainage|sewer|utilit|\btrees?\b|wetland|slope|\brock|landscap|retaining|watershed|flood|crosswalk|sidewalk|roadway|infiltration)/i,
   hvac:/(hvac|heat|cool|mechanical|ventilat|rooftop unit|electrif|fossil|natural gas|energy|green building|all-electric|geothermal)/i,
@@ -132,6 +139,11 @@ function tradeNeeds(j){
     f.reapp?'This is a re-approval of an earlier plan, so ask whether a builder is already attached.':'No builder is named in the filing yet.',
     st>=4&&!house?'4+ stories usually means an elevator, sprinklers and a fire-rated stair core.':null,
     f.storage?'Self-storage: long, repetitive interior partition and door package.':null ];
+  out.frame=[ f.reno?`Interior framing for the fit-out: new partitions, soffits, blocking and backing${j.sqfa?' across about '+n(j.sqfa)+' sq ft':''}.`
+      :st<=5&&!j.comm&&j.use!=='Commercial or Office'?`Up to 5 stories of housing usually means a wood frame: walls, floors, roof framing and sheathing${foot?' over a footprint of roughly '+n(foot)+' sq ft':''}.`
+      :`${st} stories or commercial use: usually a steel or concrete frame, so the framing scope is metal-stud partitions, blocking and backing.`,
+    multi?`${j.units} units: repetitive unit and corridor partitions, plus blocking for cabinets, grab bars and fixtures.`:null,
+    house?'Single-family: full wood frame, roof framing, sheathing and exterior trim.':null ];
   out.concrete=[ foot?`Footings and foundation under a footprint of roughly ${n(foot)} sq ft (floor area ÷ stories).`:'Footings and slab; footprint not stated in the filing.',
     f.garage||j.parking>40?`Parking${j.parking?' for '+j.parking+' cars':''}${f.garage?' in a garage or deck: structured slabs, ramps and walls':' on grade: curbs, pads and walks'}.`:null,
     st>=6&&!house?`${st} stories: likely a concrete podium or frame, plus elevator pit and stair cores.`:null,
@@ -187,7 +199,7 @@ Hi ${first},
 
 I saw ${j.name} (${j.addr.split(',')[0]}) on the County Planning Board referrals, county file ${j.id}. Could you share the applicant's name and contact, and the project engineer or architect? I'd also like to know when it's next on the ${j.agency||'board'} agenda.
 
-We're a [${tlabel()}] contractor based in Westchester and would like to get in front of the applicant early.
+We're a ${isGC()?'[general contractor]':`[${tlabel()}] contractor`} based in Westchester and would like to get in front of the applicant early.
 
 Thanks,
 [Your name]
@@ -196,15 +208,15 @@ Thanks,
 function emailApplicant(j){
   const T=TS();
   const scope=[j.sqfa?`${fmtN(j.sqfa)} sq ft`:'', j.units?`${j.units} units`:'', j.stories?`${j.stories} stories`:''].filter(Boolean).join(', ');
-  return `Subject: ${j.name}, ${j.town}: ${tlabel()}
+  return `Subject: ${j.name}, ${j.town}: ${tdo()}
 
 Hi [applicant first name],
 
 I saw ${j.name} at ${j.addr.split(',')[0]} come through ${j.town}'s ${j.agency||'planning board'} review${scope?` (${scope})`:''}. Congratulations on getting it moving.
 
-From the filing, the ${tlabel()} side looks like: ${sideOf(j).map(x=>x.replace(/\.$/,'')).join('; ').replace(/^./,c=>c.toLowerCase())}.
+From the filing, the ${isGC()?'job':tlabel()+' side'} looks like: ${sideOf(j).map(x=>x.replace(/\.$/,'')).join('; ').replace(/^./,c=>c.toLowerCase())}.
 
-We do ${T.need} on projects like this across Westchester, including [two local jobs]. ${j.tv>0?`By our rough math the ${tlabel()} package here is in the ${fmt$(j.tv*0.8)} to ${fmt$(j.tv*1.2)} range. `:''}We'd be glad to give you early pricing to help with your budget while the plans are still in review.
+We do ${T.need} on projects like this across Westchester, including [two local jobs]. ${j.tv>0?`By our rough math the ${isGC()?'construction cost':tlabel()+' package'} here is in the ${fmt$(j.tv*0.8)} to ${fmt$(j.tv*1.2)} range. `:''}We'd be glad to give you early pricing to help with your budget while the plans are still in review.
 
 Can we get on the bid list? I'll call [Thursday] in case that's easier.
 
@@ -224,11 +236,11 @@ function home(){
   $('#h-eyebrow').textContent=`Westchester County · Planning Board referrals · Nov 2025 to Nov 2026 · pulled ${PULLED}`;
   const c=jobs.filter(j=>j.c4);
   $('#h-big').textContent=fmt$(c.reduce((a,j)=>a+j.value,0));
-  $('#h-lede').innerHTML=`Contract Connect read all <b>${jobs.length}</b> projects Westchester towns sent to the County Planning Board in the last year. <b>${c.length}</b> are private, local-builder size, and were filed in the last ${A.days} days. That's about <b>${fmt$(c.reduce((a,j)=>a+j.tv,0))}</b> of ${tlabel()} work nobody has bid yet. Everything referred in the year, including public work and megaprojects, totals ${fmt$(tot)}.${(n=>n?` <b>${n}</b> more on the list ${n===1?'gives':'give'} units but no floor area, so ${n===1?'it has':'they have'} no dollar figure.`:'')(c.filter(j=>j.noArea).length)}`;
+  $('#h-lede').innerHTML=`Contract Connect read all <b>${jobs.length}</b> projects Westchester towns sent to the County Planning Board in the last year. <b>${c.length}</b> are private, local-builder size, and were filed in the last ${A.days} days. That's about <b>${fmt$(c.reduce((a,j)=>a+j.tv,0))}</b> of ${tdo()} work nobody has bid yet. Everything referred in the year, including public work and megaprojects, totals ${fmt$(tot)}.${(n=>n?` <b>${n}</b> more on the list ${n===1?'gives':'give'} units but no floor area, so ${n===1?'it has':'they have'} no dollar figure.`:'')(c.filter(j=>j.noArea).length)}`;
   const s0=jobs,s1=jobs.filter(j=>j.c1),s2=jobs.filter(j=>j.c2),s3=jobs.filter(j=>j.c3),s4=c;
   const steps=[['Referred','Projects with construction scope',s0],['Cut 1','Private, not public or institutional',s1],['Cut 2','A real building: 5,000+ sq ft or 5+ units',s2],['Cut 3','Local-builder size, under 250,000 sq ft',s3],['Call list',`Filed in the last ${A.days} days`,s4]];
   $('#funnel').innerHTML=`<div class="pad" style="padding-bottom:4px"><div class="eyebrow">The bid schedule</div><h3 style="margin:4px 0 8px">From every referral to the first call</h3></div>`+
-    steps.map((s,i)=>`<div class="step ${i>=4?'hot':''}"><div class="k">${s[0]}</div><div class="n">${s[2].length}</div><div class="t">${s[1]}</div><div class="m">${fmt$(s[2].reduce((x,j)=>x+j.value,0))} est. value · ${fmt$(s[2].reduce((x,j)=>x+j.tv,0))} ${esc(tlabel())}<div class="bar"><span style="width:${(s[2].length/s0.length*100).toFixed(1)}%"></span></div></div></div>`).join('');
+    steps.map((s,i)=>`<div class="step ${i>=4?'hot':''}"><div class="k">${s[0]}</div><div class="n">${s[2].length}</div><div class="t">${s[1]}</div><div class="m">${fmt$(s[2].reduce((x,j)=>x+j.value,0))} est. value · ${fmt$(s[2].reduce((x,j)=>x+j.tv,0))} ${esc(tdo())}<div class="bar"><span style="width:${(s[2].length/s0.length*100).toFixed(1)}%"></span></div></div></div>`).join('');
   const units=c.reduce((a,j)=>a+j.units,0);
   const newc=c.filter(j=>j.kind.k==='new');
   const towns={};c.forEach(j=>towns[j.town]=(towns[j.town]||0)+1);
@@ -244,7 +256,7 @@ function home(){
   $('#top5').innerHTML=head(true)+top.map((j,i)=>row(j,i+1)).join('');
   bind('#top5'); drawMap();
 }
-function head(rank){return `<thead><tr>${rank?'<th>#</th>':''}<th>Filed</th><th>Project</th><th>Type of work</th><th class="num">Sq ft</th><th class="num">Units</th><th class="num">Est. ${esc(tlabel())}</th><th class="num">Score</th></tr></thead>`}
+function head(rank){return `<thead><tr>${rank?'<th>#</th>':''}<th>Filed</th><th>Project</th><th>Type of work</th><th class="num">Sq ft</th><th class="num">Units</th><th class="num">Est. ${esc(tcol())}</th><th class="num">Score</th></tr></thead>`}
 function row(j,rank){
   return `<tr class="row" data-id="${j.id}">${rank!==undefined?`<td class="rank">${rank}</td>`:''}<td class="num" style="text-align:left;white-space:nowrap">${fdate(j.date)}<div class="sub">${ago(j)}</div></td><td><div class="addr">${esc(j.name)}${newPill(j)}${j.noArea?'<span class="pill p-wait" style="margin-left:6px">NO FLOOR AREA</span>':''}${TEAM[j.id]&&TEAM[j.id].people.length?'<span class="pill p-rev" style="margin-left:6px">TEAM FOUND</span>':''}${stagePill(j)}</div><div class="sub">${esc(j.town)} · ${esc(j.use)}</div><div class="sub" style="max-width:52ch;margin-top:2px">${esc(j.desc.length>150?j.desc.slice(0,150).replace(/\s+\S*$/,'')+'…':j.desc)}</div></td><td>${kindPill(j)}</td><td class="num">${j.sqfa?fmtN(j.sqfa):'·'}</td><td class="num">${j.units||'·'}</td><td class="num">${est$(j.tv)}</td><td class="num">${j.score||'·'}</td></tr>`;
 }
@@ -265,7 +277,7 @@ function allJobs(){
   const val=sortK==='kind'?j=>j.kind.t:j=>j[sortK];
   list.sort((x,y)=>{const a=val(x),bb=val(y);return (a>bb?1:a<bb?-1:0)*sortDir});
   $('#f-count').textContent=list.length+' projects';
-  const cols=[['age','Filed'],['name','Project'],['kind','Type of work'],['sqfa','Sq ft','num'],['units','Units','num'],['tv','Est. '+tlabel(),'num'],['score','Score','num']];
+  const cols=[['age','Filed'],['name','Project'],['kind','Type of work'],['sqfa','Sq ft','num'],['units','Units','num'],['tv','Est. '+tcol(),'num'],['score','Score','num']];
   $('#alltable').innerHTML='<thead><tr>'+cols.map(k=>`<th class="${k[2]||''}" data-k="${k[0]}">${esc(k[1])}${sortK===k[0]?(sortDir>0?' ↑':' ↓'):''}</th>`).join('')+'</tr></thead><tbody>'+list.map(j=>row(j)).join('')+'</tbody>';
   document.querySelectorAll('#alltable th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortK===k)sortDir*=-1;else{sortK=k;sortDir=(k==='name'||k==='age'||k==='kind')?1:-1}allJobs()});
   bind('#alltable');
@@ -273,7 +285,7 @@ function allJobs(){
 function towns(){
   const g={};jobs.forEach(j=>(g[j.town] ||= []).push(j));
   const rows=Object.entries(g).sort((a,b)=>b[1].filter(j=>j.c4).reduce((x,j)=>x+j.tv,0)-a[1].filter(j=>j.c4).reduce((x,j)=>x+j.tv,0));
-  $('#towntable').innerHTML='<thead><tr><th>Town</th><th>Planning contact</th><th class="num">Projects</th><th class="num">On call list</th><th class="num">Est. '+esc(tlabel())+'</th><th>Call-list projects</th></tr></thead><tbody>'+rows.map(([t,a])=>{
+  $('#towntable').innerHTML='<thead><tr><th>Town</th><th>Planning contact</th><th class="num">Projects</th><th class="num">On call list</th><th class="num">Est. '+esc(tcol())+'</th><th>Call-list projects</th></tr></thead><tbody>'+rows.map(([t,a])=>{
     const on=a.filter(j=>j.c4); const p=a.find(j=>j.rec)||a[0];
     const C=CONTACTS[t]||{};
     return `<tr><td class="addr">${esc(t)}</td><td>${esc(p.rec||'Planning office')}<div class="sub">${esc(p.recTitle)}${p.recAgency?' · '+esc(p.recAgency):''}</div><div class="sub">${C.email?esc(C.email)+' · ':''}${C.plan?'Planning '+esc(C.plan)+' · ':''}${C.bld?'Building '+esc(C.bld):''}</div>${C.page?`<a class="sub" href="${C.page}" target="_blank" rel="noopener">${esc(C.pageLabel)} ↗</a>`:''}</td><td class="num">${a.length}</td><td class="num">${on.length}</td><td class="num">${fmt$(on.reduce((x,j)=>x+j.tv,0))}</td><td>${on.map(j=>`<a class="chip" href="#job-${j.id}">${esc(j.name)}</a>`).join('')||'<span class="sub">None right now</span>'}</td></tr>`}).join('')+'</tbody>';
@@ -290,7 +302,7 @@ function jobView(id){
   $('#v-job').innerHTML=`<section>
     <div class="eyebrow"><a href="#call-list">Call list</a> / ${esc(j.town)} / ${esc(j.id)}</div>
     <div class="job-hero"><div><h2>${esc(j.name)}</h2><div class="sub" style="margin:-4px 0 8px">${esc(j.addr)} · <b style="color:var(--ink)">Filed ${fdate(j.date)}</b> (${ago(j)})${newPill(j)}</div><div>${kindPill(j)} ${j.c4?`<span class="chip">Call list · score ${j.score}</span>`:`<span class="chip">Not on the call list. ${esc(why)}</span>`}</div></div>
-    <div style="text-align:right"><div class="eyebrow">Est. ${esc(tlabel())}</div><div class="big" style="font-size:64px">${est$(j.tv)}</div><div class="sub">${j.noArea&&!j.tv?`The referral gives ${j.units} units but no floor area, so there is no dollar estimate`:j.sqfa?`of ${fmt$(j.value)} hard cost at $${A.psf}/sq ft`:`from ${fmtN(j.sqd)} sq ft of disturbance`}</div></div></div>
+    <div style="text-align:right"><div class="eyebrow">Est. ${esc(tcol())}</div><div class="big" style="font-size:64px">${est$(j.tv)}</div><div class="sub">${j.noArea&&!j.tv?`The referral gives ${j.units} units but no floor area, so there is no dollar estimate`:j.sqfa?`of ${fmt$(j.value)} hard cost at $${A.psf}/sq ft`:`from ${fmtN(j.sqd)} sq ft of disturbance`}</div></div></div>
   </section>
   <div class="panel pad" style="margin-bottom:20px">
     <h3>Where it stands</h3>
@@ -386,7 +398,7 @@ function drawMap(){
   if(!MAP) MAP=new CCMap(box,{shapes:window.CC_SHAPES||{}, mine:D.areas, hint:$('#map-hint'), unit:'town', onOpen:id=>{location.hash='job-'+id}});
   MAP.setItems(jobs.filter(j=>j.lat&&j.lng).map(j=>({id:j.id, lat:j.lat, lng:j.lng, v:j.tv, hot:!!j.c4, title:j.name,
     sub:`${j.town} · ${j.addr} · filed ${j.age===0?'today':j.age===1?'yesterday':j.age+' days ago'}`,
-    val:j.tv>0?`${est$(j.tv)} est. ${tlabel()}${j.c4?'':' · not on your call list'}`:`No estimate${j.noArea?' (units but no floor area)':''}${j.c4?'':' · not on your call list'}`})));
+    val:j.tv>0?`${est$(j.tv)} est. ${tcol()}${j.c4?'':' · not on your call list'}`:`No estimate${j.noArea?' (units but no floor area)':''}${j.c4?'':' · not on your call list'}`})));
 }
 
 function refresh(){compute();ticker();route()}
