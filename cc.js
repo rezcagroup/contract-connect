@@ -31,7 +31,7 @@ CC.requireUser = async () => {
 };
 
 // The trades a user can sell. Keys match TRADES in both apps.
-CC.TRADES = {gc:'GC / framing', concrete:'Concrete', site:'Site work', hvac:'HVAC', elec:'Electrical', plumb:'Plumbing', roof:'Roofing', windows:'Windows & doors', paint:'Painting'};
+CC.TRADES = {gc:'General contractor', frame:'Framing & carpentry', concrete:'Concrete', site:'Site work', hvac:'HVAC', elec:'Electrical', plumb:'Plumbing', roof:'Roofing', windows:'Windows & doors', paint:'Painting'};
 
 CC.profile = async () => {
   const {data, error} = await CC.sb.from('profiles').select('*').maybeSingle();

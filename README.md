@@ -56,7 +56,7 @@ The Westchester app is `westchester.html` (built from `src/body.html` and `src/s
 ## What it does
 
 - **Call list:** private projects with a real building (5,000+ sq ft or 5+ units), under 250,000 sq ft, filed in the last 30 days by default. Newest first, NEW tag for the last 14 days.
-- **Trade picker:** GC, concrete, site work, HVAC, electrical, plumbing, roofing, windows and doors, painting. Every estimate, scope and email switches to the selected trade.
+- **Trade picker:** general contractor, framing and carpentry, concrete, site work, HVAC, electrical, plumbing, roofing, windows and doors, painting. Every estimate, scope and email switches to the selected trades (several can be picked; their estimates add up).
 - **Project pages:** full filing description, county review comments, per-trade scope with quotes from the filing, project team found in public records, links to the filing (county PDF where attached), town contacts, and two outreach emails.
 - **By town:** planning contacts and phone numbers per municipality.
 - **Contact sheet:** copies the call list as CSV.
@@ -107,7 +107,7 @@ There is no automated lookup: citysquared.com blocks automated browsers, so perm
 
 ## Estimates
 
-Referrals carry no construction cost. Value = floor area x hard cost per sq ft (default $450, adjustable on the Call list tab). Each trade is a rule-of-thumb share of hard cost; site work has a floor of $12 per sq ft of disturbed land. Scope lines not stated in the filing are tagged "typical, not stated". These are for qualifying leads, not for bidding.
+Referrals carry no construction cost. Value = floor area x hard cost per sq ft (default $450, adjustable on the Call list tab). A general contractor's figure is the full construction cost (it covers every other trade, so picking GC with other trades still shows the full cost). Each other trade is a rule-of-thumb share of hard cost (framing and carpentry 9%); site work has a floor of $12 per sq ft of disturbed land. Scope lines not stated in the filing are tagged "typical, not stated". These are for qualifying leads, not for bidding.
 
 Where a referral gives housing units but no floor area, the project is tagged NO FLOOR AREA and gets no dollar estimate (it is left out of the dollar totals rather than guessed). It still qualifies on its unit count, and is cut as too big above 200 units. `src/script.js` also repairs words the county feed runs together ("ValerieMonastra", "orUse") when the data loads; words joined in all lower case ("isproposing") are left as they are.
 
