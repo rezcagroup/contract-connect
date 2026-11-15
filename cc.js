@@ -10,7 +10,7 @@ CC.sb = CC.configured && window.supabase ? window.supabase.createClient(SB_URL, 
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 CC.esc = esc;
 CC.STACK = '<a class="cc-mark stack" href="index.html" aria-label="Contract Connect home"><img class="cc-ic" src="assets/icon.png" alt=""><span class="c1">Contract</span><span class="c2">Connect</span><span class="cc-tag">FIND\nBID\nWIN</span></a>';
-CC.REGIONS = {wc:{name:'Westchester', page:'westchester.html', unit:'towns'}, nyc:{name:'New York City', page:'nyc.html', unit:'boroughs'}};
+CC.REGIONS = {wc:{name:'Westchester', short:'Westchester', page:'westchester.html', unit:'towns'}, nyc:{name:'New York City', short:'NYC', page:'nyc.html', unit:'boroughs'}};
 
 function notReady(){
   document.body.className = 'cc-page';
@@ -108,15 +108,15 @@ async function all(table, cols, filter){
 
 CC.signOut = async () => { await CC.sb.auth.signOut(); location.href = 'index.html'; };
 
-// The bar above every app page: brand, the two regions, My areas, Log out.
+// The bar above every app page: brand, the two regions, Trades & areas, Log out. Phones get the icon and short labels.
 CC.accountBar = (current, profile) => {
   const bar = document.createElement('div');
   bar.className = 'cc-bar';
   const n = r => profile.areas.filter(a=>a.startsWith(r+':')).length;
   bar.innerHTML = `<div class="wrap cc-bar-in">
     <a class="cc-mark" href="${CC.home(profile.areas)}" aria-label="Contract Connect home"><img class="cc-ic" src="assets/icon.png" alt=""><span class="c1">Contract</span><span class="c2">Connect</span></a>
-    <nav>${Object.entries(CC.REGIONS).map(([k,r])=>`<a href="${r.page}" class="${k===current?'on':''}">${r.name}<i>${n(k)}</i></a>`).join('')}
-      <a href="areas.html" class="${current==='areas'?'on':''}">My areas</a>
+    <nav>${Object.entries(CC.REGIONS).map(([k,r])=>`<a href="${r.page}" class="${k===current?'on':''}"><span class="lg">${r.name}</span><span class="sm">${r.short}</span><i>${n(k)}</i></a>`).join('')}
+      <a href="areas.html" class="${current==='areas'?'on':''}"><span class="lg">Trades &amp; areas</span><span class="sm">Areas</span></a>
       <button type="button" id="cc-out">Log out</button></nav></div>`;
   document.body.prepend(bar);
   bar.querySelector('#cc-out').onclick = CC.signOut;

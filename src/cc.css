@@ -32,7 +32,18 @@ a.cc-mark.light,.cc-mark.light{color:var(--accent-ink)}
 .cc-bar nav a,.cc-bar nav button{font:700 14px var(--display);letter-spacing:.07em;text-transform:uppercase;color:var(--mute);text-decoration:none;background:none;border:0;padding:7px 10px;cursor:pointer}
 .cc-bar nav a:hover,.cc-bar nav button:hover{color:var(--ink)}
 .cc-bar nav a.on{color:var(--accent)}
-@media (max-width:600px){.cc-bar-in{padding-top:6px;padding-bottom:6px}.cc-bar nav{gap:0;margin-left:-10px}.cc-bar nav a,.cc-bar nav button{font-size:13px;padding:6px 8px}}
+.cc-bar .sm{display:none}
+@media (max-width:600px){
+  .cc-bar .wrap{padding:0 12px}
+  .cc-bar-in{flex-wrap:nowrap;gap:8px;min-height:48px}
+  .cc-bar .cc-mark .c1,.cc-bar .cc-mark .c2{display:none}   /* icon only */
+  .cc-bar .cc-mark .cc-ic{height:28px;margin:0}
+  .cc-bar nav{flex-wrap:nowrap;gap:0;overflow-x:auto;scrollbar-width:none;margin-right:-6px}
+  .cc-bar nav::-webkit-scrollbar{display:none}
+  .cc-bar nav a,.cc-bar nav button{font-size:13px;letter-spacing:.04em;padding:6px 6px;white-space:nowrap}
+  .cc-bar nav i{margin-left:4px;padding:0 4px}
+  .cc-bar .lg{display:none}.cc-bar .sm{display:inline}
+}
 .cc-bar nav i{font:500 11px var(--mono);font-style:normal;margin-left:5px;padding:1px 5px;border:1px solid var(--line);color:var(--mute)}
 
 /* Messages inside an app page */
