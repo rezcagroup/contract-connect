@@ -26,7 +26,7 @@ Sources are in `src/`; `python3 build.py` writes the pages above plus `cc.js` an
 
 1. Create a Supabase project (East US region).
 2. In Supabase, open **SQL Editor**, paste `supabase/schema.sql` and run it.
-3. In **Authentication -> URL Configuration**, set **Site URL** to `https://rezcagroup.github.io/westchester-lead-machine/` and add `https://rezcagroup.github.io/westchester-lead-machine/**` to the redirect URLs, so confirmation and reset emails link back to the site.
+3. In **Authentication -> URL Configuration**, set **Site URL** to `https://rezcagroup.github.io/contract-connect/` and add `https://rezcagroup.github.io/contract-connect/**` to the redirect URLs, so confirmation and reset emails link back to the site.
 4. Put the **Project URL** and **publishable key** in `site_config.json`. Both are public. The build refuses a secret key there.
 5. In GitHub: **Settings -> Secrets and variables -> Actions**, add `SUPABASE_URL` and `SUPABASE_SECRET_KEY` (the secret key, `sb_secret_...`). Never commit the secret key.
 6. Run the **Refresh and publish** workflow once (Actions tab) to upload the data.
@@ -98,7 +98,7 @@ There is no automated lookup: citysquared.com blocks automated browsers, so perm
 
 ## Automatic refresh
 
-`.github/workflows/refresh.yml` runs every morning at 10:17 UTC (about 5 to 6 am New York), on every push to `main`, and on demand from the Actions tab. It pulls fresh NYC filings (`pull_nyc.py`) and Westchester referrals (`pull_westchester.py`), rebuilds both pages and publishes them to GitHub Pages at https://rezcagroup.github.io/westchester-lead-machine/. Nothing is committed back; the fresh data goes only to the published site. If the county service is down, the Westchester page is published from the data already in the repo. Running the pull scripts by hand and committing is only needed to update the copies in the repo.
+`.github/workflows/refresh.yml` runs every morning at 10:17 UTC (about 5 to 6 am New York), on every push to `main`, and on demand from the Actions tab. It pulls fresh NYC filings (`pull_nyc.py`) and Westchester referrals (`pull_westchester.py`), rebuilds both pages and publishes them to GitHub Pages at https://rezcagroup.github.io/contract-connect/. Nothing is committed back; the fresh data goes only to the published site. If the county service is down, the Westchester page is published from the data already in the repo. Running the pull scripts by hand and committing is only needed to update the copies in the repo.
 
 ## Estimates
 

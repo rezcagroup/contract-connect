@@ -21,7 +21,7 @@ SB = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></scrip
 ICONS = ('<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">\n'
          '<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">\n'
          '<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">\n<meta name="theme-color" content="#141a22">\n')
-SITE = "https://rezcagroup.github.io/westchester-lead-machine/"
+SITE = "https://rezcagroup.github.io/contract-connect/"
 # Link previews (texts, Slack, social posts) for the landing page.
 SHARE = ('<meta property="og:type" content="website">\n<meta property="og:site_name" content="Contract Connect">\n'
          '<meta property="og:title" content="Contract Connect: find the job before everyone else bids it">\n'
