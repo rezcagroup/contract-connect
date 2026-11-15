@@ -1,8 +1,8 @@
 // Contract Connect: shared sign-in, area and data code for every page after the landing page.
-// build.py fills  and  from site_config.json. The publishable key is meant to be public:
+// build.py fills https://oalgkxghwxosmmjirzti.supabase.co and sb_publishable_D1Kdu9-RiZa8eXasvXWlCw_G2Dnq-uz from site_config.json. The publishable key is meant to be public:
 // what a user can read is decided by the database rules in supabase/schema.sql, not by this file.
 (function(){
-const SB_URL = "", SB_KEY = "";
+const SB_URL = "https://oalgkxghwxosmmjirzti.supabase.co", SB_KEY = "sb_publishable_D1Kdu9-RiZa8eXasvXWlCw_G2Dnq-uz";
 const CC = window.CC = {};
 CC.configured = /^https:\/\//.test(SB_URL) && SB_KEY.length > 20;
 CC.sb = CC.configured && window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
