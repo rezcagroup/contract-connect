@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contract Connect: early construction leads for Westchester and NYC</title>
+<meta name="description" content="Contract Connect finds private construction projects in Westchester County and New York City months before a building permit, sizes your trade's share, and shows who to call.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12161c; --panel:#1a2029; --line:#2c3542; --ink:#e8ecf1; --mute:#8f9bab;
+  --accent:#ffb020; --accent-ink:#1a1202; --steel:#5f7a96; --good:#5fc48a;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--body)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1140px;margin:0 auto;padding:0 22px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1,h2,h3{font-family:var(--display);text-transform:uppercase;margin:0}
+h2{font-weight:800;font-size:clamp(30px,4vw,44px);line-height:1.02;letter-spacing:.01em;margin:8px 0 14px;text-wrap:balance}
+h3{font-weight:700;font-size:21px;line-height:1.1;letter-spacing:.03em;margin:0 0 8px}
+p{margin:0 0 12px}
+.mute{color:var(--mute)}
+section{padding:72px 0;border-top:1px solid var(--line)}
+
+/* Buttons */
+.btn{display:inline-block;font:700 16px var(--display);letter-spacing:.08em;text-transform:uppercase;text-decoration:none;padding:13px 22px;border:2px solid var(--accent);cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:#ffc04d}
+.btn.ghost{color:var(--ink);border-color:var(--line);background:transparent}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.sm{padding:8px 14px;font-size:14px}
+
+/* Header */
+header{position:sticky;top:0;z-index:10;background:rgba(18,22,28,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:12px;padding-bottom:12px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink)}
+.logo{width:34px;height:34px;border:2px solid var(--accent);display:grid;place-items:center;font:800 15px var(--display);color:var(--accent)}
+.brand b{font:800 22px/1 var(--display);letter-spacing:.03em;text-transform:uppercase}
+header nav{display:flex;align-items:center;gap:22px}
+header nav a.link{font:600 15px var(--display);letter-spacing:.07em;text-transform:uppercase;color:var(--mute);text-decoration:none}
+header nav a.link:hover{color:var(--ink)}
+@media (max-width:760px){header nav{gap:14px}header nav a.link:not(.keep){display:none}header nav a{white-space:nowrap}.brand b{font-size:18px}}
+
+/* Hero */
+.hero{padding:84px 0 76px;border-top:0}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:48px;align-items:center}
+@media (max-width:900px){.hero-grid{grid-template-columns:1fr}}
+.hero h1{font-weight:800;font-size:clamp(44px,6.4vw,78px);line-height:.94;letter-spacing:-.005em;margin:12px 0 20px;text-wrap:balance}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .lede{font-size:18px;color:var(--mute);max-width:52ch;margin-bottom:28px}
+.hero .lede b{color:var(--ink);font-weight:600}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.fine{font:500 12px var(--mono);letter-spacing:.06em;color:var(--mute);margin-top:14px;text-transform:uppercase}
+
+/* Sample lead card */
+.card{background:var(--panel);border:1px solid var(--line);position:relative}
+.card .head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.tag{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;border:1px solid currentColor}
+.tag.new{color:var(--good)}
+.tag.trade{color:var(--accent)}
+.card .body{padding:16px}
+.card .title{font:700 24px/1.05 var(--display);text-transform:uppercase;letter-spacing:.02em;margin-bottom:4px}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:14px 0}
+.kv div{background:var(--panel);padding:10px 12px}
+.kv small{display:block;font:500 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.kv b{font:700 22px var(--display);font-variant-numeric:tabular-nums}
+.blur{filter:blur(5px);user-select:none}
+.rows{font-size:14px}
+.rows div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px dashed var(--line)}
+.rows span:first-child{color:var(--mute)}
+.lock{position:absolute;left:16px;right:16px;bottom:16px;background:rgba(18,22,28,.9);border:1px solid var(--accent);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px}
+
+/* Steps / features */
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:860px){.grid3,.grid2{grid-template-columns:1fr}}
+.box{background:var(--panel);border:1px solid var(--line);padding:22px}
+.num{font:800 46px/1 var(--display);color:var(--accent);margin-bottom:10px}
+.box p{color:var(--mute);margin:0}
+.intro{max-width:64ch;color:var(--mute);font-size:17px;margin-bottom:32px}
+
+/* Timeline */
+.timeline{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line)}
+.timeline div{padding:18px;border-right:1px solid var(--line);background:var(--panel)}
+.timeline div:last-child{border-right:0}
+.timeline div.you{background:#2a2312;box-shadow:inset 0 3px 0 var(--accent)}
+.timeline small{display:block;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:6px}
+.timeline b{font:700 20px var(--display);text-transform:uppercase;letter-spacing:.02em}
+.timeline p{color:var(--mute);font-size:14px;margin:6px 0 0}
+@media (max-width:760px){.timeline{grid-template-columns:1fr}.timeline div{border-right:0;border-bottom:1px solid var(--line)}}
+
+/* Trades & areas chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:600 15px var(--display);letter-spacing:.05em;text-transform:uppercase;border:1px solid var(--line);background:var(--panel);padding:7px 12px}
+.chip.on{border-color:var(--accent);color:var(--accent)}
+.areas h3 .count{font:500 12px var(--mono);color:var(--mute);letter-spacing:.08em;margin-left:8px}
+
+/* Pricing */
+.price{max-width:560px;margin:0 auto;text-align:center;padding:36px 28px;border:2px solid var(--accent);background:var(--panel)}
+.price .big{font:800 72px/1 var(--display);color:var(--accent)}
+.price ul{list-style:none;padding:0;margin:20px 0 26px;text-align:left;display:inline-block}
+.price li{padding:5px 0 5px 26px;position:relative}
+.price li:before{content:"";position:absolute;left:4px;top:13px;width:10px;height:6px;border-left:2px solid var(--good);border-bottom:2px solid var(--good);transform:rotate(-45deg)}
+
+/* FAQ */
+details{border-top:1px solid var(--line);padding:16px 0}
+details:last-child{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;font:700 19px var(--display);letter-spacing:.03em;text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;gap:16px}
+summary::-webkit-details-marker{display:none}
+summary:after{content:"+";color:var(--accent);font-size:24px;line-height:1}
+details[open] summary:after{content:"–"}
+details p{color:var(--mute);margin:10px 0 0;max-width:70ch}
+
+footer{border-top:1px solid var(--line);padding:30px 0 40px;color:var(--mute);font-size:13px}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="logo">CC</span><b>Contract Connect</b></a>
+    <nav>
+      <a class="link" href="#how">How it works</a>
+      <a class="link" href="#areas">Areas</a>
+      <a class="link" href="#pricing">Pricing</a>
+      <a class="link keep" href="#login">Log in</a>
+      <a class="btn primary sm" href="#signup">Start free trial</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">Westchester County · New York City</div>
+        <h1>Find the job <em>before</em> everyone else bids it.</h1>
+        <p class="lede">Contract Connect reads every new private construction filing in <b>Westchester's towns</b> and <b>New York City's five boroughs</b> and turns it into a call list for your trade. You see the project, how big it is, what your piece is worth, and who to contact. That's <b>months before a building permit</b>, while the trades are still open.</p>
+        <div class="cta-row">
+          <a class="btn primary" href="#signup">Start your 14-day free trial</a>
+          <a class="btn ghost" href="#how">See how it works</a>
+        </div>
+        <div class="fine">No credit card to start · Pick only the towns you work in</div>
+      </div>
+
+      <div class="card" aria-label="Example lead">
+        <div class="head"><span class="tag new">New · filed 3 days ago</span><span class="tag trade">Selling as: Concrete</span></div>
+        <div class="body">
+          <div class="title">Mixed-use building, 4 stories</div>
+          <div class="mute" style="font-size:14px">Site plan · <span class="blur">White Plains</span> · Planning Board</div>
+          <div class="kv">
+            <div><small>Floor area</small><b>38,400 sf</b></div>
+            <div><small>Units</small><b>32</b></div>
+            <div><small>Your share</small><b>$1.4M</b></div>
+          </div>
+          <div class="rows">
+            <div><span>Developer</span><span class="blur">Hudson Ridge Partners LLC</span></div>
+            <div><span>Architect</span><span class="blur">M. Alvarez Architects</span></div>
+            <div><span>Town contact</span><span class="blur">(914) 555-0142</span></div>
+            <div><span>Outreach email</span><span class="blur">Ready to send</span></div>
+          </div>
+          <div style="height:64px"></div>
+        </div>
+        <div class="lock"><span>Names, addresses and contacts unlock with an account.</span><a class="btn primary sm" href="#signup">Unlock</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="wrap">
+      <div class="eyebrow">Why it's early</div>
+      <h2>Most lead services show you a job once the permit is issued. By then, it's been bought out.</h2>
+      <p class="intro">Big projects have to file with the public long before a shovel goes in. In Westchester, every town must send larger site plans to the County Planning Board. In NYC, every job is filed with the Department of Buildings. Contract Connect watches both every day, so you hear about it at the first public step.</p>
+      <div class="timeline">
+        <div class="you"><small>Contract Connect finds it</small><b>Filing / referral</b><p>Project goes to the planning board or DOB.</p></div>
+        <div><small>Weeks to months</small><b>Hearings &amp; approvals</b><p>Design firms up and budgets get set.</p></div>
+        <div><small>Most lead lists start here</small><b>Building permit</b><p>The GC is lining up subs.</p></div>
+        <div><small>Too late</small><b>Construction</b><p>The trades are already bought out.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="eyebrow">How it works</div>
+      <h2>Three steps to a call list</h2>
+      <div class="grid3" style="margin-top:28px">
+        <div class="box"><div class="num">01</div><h3>Sign up</h3><p>Create an account in under a minute. Your first 14 days are free.</p></div>
+        <div class="box"><div class="num">02</div><h3>Pick your areas</h3><p>Toggle the Westchester towns and NYC boroughs you actually work in. Change them any time.</p></div>
+        <div class="box"><div class="num">03</div><h3>Work the list</h3><p>New projects show up every morning, sized for your trade, with the team, the town contacts and an email you can send.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="eyebrow">What you get</div>
+      <h2>Everything you need to make the call</h2>
+      <div class="grid2" style="margin-top:28px">
+        <div class="box"><h3>A fresh call list every morning</h3><p>Private projects with a real building in them, newest first. Anything filed in the last two weeks is marked NEW.</p></div>
+        <div class="box"><h3>Your trade's slice, estimated</h3><p>Every project shows what your scope is roughly worth, from floor area and typical cost shares. Change the cost per square foot to match your market.</p></div>
+        <div class="box"><h3>Who's behind it</h3><p>Developer, architect, engineer and filing representative from public records. In NYC, the GC once one pulls a permit.</p></div>
+        <div class="box"><h3>Who to call</h3><p>Town building and planning contacts, phone numbers, links to the original filing, and two outreach emails written for your trade.</p></div>
+        <div class="box"><h3>The scope, from the filing</h3><p>Stories, units, parking, site acres and land disturbance, with quotes from the filing and county review comments.</p></div>
+        <div class="box"><h3>Export to your CRM</h3><p>Copy your call list as a spreadsheet in one click.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="trades">
+    <div class="wrap">
+      <div class="eyebrow">Built for subs and GCs</div>
+      <h2>Pick the trade you sell</h2>
+      <p class="intro">Every estimate, scope line and email switches to your trade.</p>
+      <div class="chips">
+        <span class="chip">GC / framing</span><span class="chip on">Concrete</span><span class="chip">Site work</span><span class="chip">HVAC</span><span class="chip">Electrical</span><span class="chip">Plumbing</span><span class="chip">Roofing</span><span class="chip">Windows &amp; doors</span><span class="chip">Painting</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="areas" class="areas">
+    <div class="wrap">
+      <div class="eyebrow">Coverage</div>
+      <h2>Only the towns you work in</h2>
+      <p class="intro">Turn on just the places you want to hear about. Here's what's covered today.</p>
+      <h3>New York City <span class="count">5 boroughs</span></h3>
+      <div class="chips" style="margin-bottom:28px">
+        <span class="chip">Manhattan</span><span class="chip">Brooklyn</span><span class="chip">Queens</span><span class="chip">The Bronx</span><span class="chip">Staten Island</span>
+      </div>
+      <h3>Westchester County <span class="count" id="wc-count"></span></h3>
+      <div class="chips" id="wc-towns"></div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="wrap">
+      <div class="price" id="signup">
+        <div class="eyebrow">Pricing</div>
+        <div class="big">14 days free</div>
+        <p class="mute">Full access to every area you pick. Paid plans are coming soon.</p>
+        <ul>
+          <li>Every Westchester town and NYC borough you choose</li>
+          <li>New projects added every morning</li>
+          <li>Estimates, project teams, contacts and emails</li>
+          <li>Cancel any time</li>
+        </ul>
+        <div class="cta-row" style="justify-content:center">
+          <a class="btn primary" href="#signup">Create your account</a>
+          <a class="btn ghost" href="#login" id="login">Log in</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="eyebrow">Questions</div>
+      <h2>FAQ</h2>
+      <details><summary>Where does the data come from?</summary><p>Westchester County Planning Board referrals, which every municipality must file for larger land-use cases, and NYC Department of Buildings job filings and permits. Both are public records. We pull them every morning and do the sorting, sizing and research for you.</p></details>
+      <details><summary>How early is "early"?</summary><p>A planning referral or DOB filing usually comes months before a building permit, often before the owner has picked a GC or bought out the trades.</p></details>
+      <details><summary>How accurate are the dollar estimates?</summary><p>They're for deciding which jobs to chase, not for bidding. They use the project's floor area, a cost per square foot you can adjust, and typical cost shares for each trade.</p></details>
+      <details><summary>What kinds of projects are included?</summary><p>Private projects with a real building in them: roughly 5,000 square feet or more, or 5 or more homes. Very large projects that a local builder is unlikely to win are left off the call list but still searchable.</p></details>
+      <details><summary>Can I change my areas later?</summary><p>Yes. Turn towns and boroughs on or off whenever you like from your account.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="yr"></span> Contract Connect</span>
+    <span>Built from public Westchester County and NYC Department of Buildings records.</span>
+  </div>
+</footer>
+
+<script>
+const WC_TOWNS = ["Ardsley","Bedford","Briarcliff Manor","Bronxville","Buchanan","Cortlandt","Dobbs Ferry","Eastchester","Greenburgh","Harrison","Hastings-on-Hudson","Larchmont","Lewisboro","Mamaroneck Town","Mamaroneck Village","Mount Kisco","Mount Pleasant","Mount Vernon","New Castle","New Rochelle","North Castle","North Salem","Ossining Village","Peekskill","Pelham Manor","Pleasantville","Port Chester","Rye Brook","Rye City","Sleepy Hollow","Somers","Tarrytown","Tuckahoe","White Plains","Yonkers","Yorktown"];
+document.getElementById('wc-towns').innerHTML = WC_TOWNS.map(t => `<span class="chip">${t}</span>`).join('');
+document.getElementById('wc-count').textContent = WC_TOWNS.length + ' municipalities';
+document.getElementById('yr').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
