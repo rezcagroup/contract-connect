@@ -12,7 +12,7 @@ Pages (written to the repo root and published by the daily GitHub job):
 No project data goes into these files. The app pages load it after sign-in from Supabase, which returns only the
 areas the user picked (see supabase/schema.sql and push_supabase.py). Supabase settings come from site_config.json.
 """
-import base64, json, re
+import base64, hashlib, json, re
 from pathlib import Path
 R = Path(__file__).parent
 SRC = R / "src"
@@ -33,7 +33,17 @@ SHARE = ('<meta property="og:type" content="website">\n<meta property="og:site_n
 CC_HEAD = ICONS + FONTS + '<link rel="stylesheet" href="cc.css">\n' + SB
 
 
+VERSIONS = {}  # shared file -> short hash of its contents, so pages ask for the matching copy after an update
+
+
 def write(out, text):
+    if out.endswith(".html"):
+        # Browsers keep cc.js, cc.css and ccmap.js for up to 10 minutes (GitHub Pages caching). A version tag that changes
+        # with the file makes them fetch the new copy as soon as a page from a new build loads.
+        for name, v in VERSIONS.items():
+            text = re.sub(r'((?:src|href)="' + re.escape(name) + r')"', r'\1?v=' + v + '"', text)
+    else:
+        VERSIONS[out] = hashlib.sha1(text.encode()).hexdigest()[:10]
     (R / out).write_text(text)
     print("Built", out, len(text), "bytes")
 
