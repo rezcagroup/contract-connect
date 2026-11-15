@@ -97,3 +97,9 @@ create policy "signed-in users read meta" on public.meta
 
 revoke all on public.projects, public.area_info, public.meta from anon, authenticated;
 grant select on public.projects, public.area_info, public.meta to authenticated;
+
+-- The daily upload (secret key = service_role) writes the data. Granted explicitly because new tables are not
+-- exposed automatically in this project.
+grant usage on schema public to service_role;
+grant select, insert, update, delete on public.projects, public.area_info, public.meta to service_role;
+grant select, insert, update, delete on public.profiles to service_role;
