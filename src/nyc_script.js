@@ -14,12 +14,18 @@ const TRADES = {
   paint:{n:'Painting',s:.03,need:'interior and exterior painting, coatings and wall finishes'}
 };
 const tname = k => { const n=TRADES[k].n; return /^(GC|HVAC)/.test(n)?n:n.toLowerCase(); };
+
+// Several trades can be selected (A.trades, in the order picked). With one trade these give exactly the old single-trade values.
+const tlabel = () => { const n=A.trades.map(tname); return n.length<3 ? n.join(' and ') : n.slice(0,-1).join(', ')+' and '+n[n.length-1]; };
+const TS = () => A.trades.length===1 ? TRADES[A.trades[0]] : {n:A.trades.map(k=>TRADES[k].n).join(' + '), s:A.trades.reduce((a,k)=>a+TRADES[k].s,0), need:A.trades.map(k=>TRADES[k].need).join('; ')};
+const sideOf = j => { const N=tradeNeeds(j); return A.trades.flatMap(k=>N[k].slice(0,A.trades.length>1?1:2)); };
 const BOROS = ['Manhattan','Brooklyn','Queens','Bronx','Staten Island'];
 // How to name the boroughs in view when no single one is picked (the user may have picked only some).
 const ALLB = () => BOROS.length===5 ? 'the five boroughs' : BOROS.length===1 ? BOROS[0] : BOROS.slice(0,-1).join(', ')+' and '+BOROS[BOROS.length-1];
 const WINDOWS = [7,14,30,60,90,180];
-const A = {psf:500, trade:'concrete', days:30, boro:'', stage:'open'};
-try{const s=JSON.parse(localStorage.getItem('nyc-assume')||'null'); if(s){A.psf=s.psf||A.psf; if(TRADES[s.trade])A.trade=s.trade; if(WINDOWS.includes(s.days))A.days=s.days; if(BOROS.includes(s.boro))A.boro=s.boro; if(['open','pre','permit'].includes(s.stage))A.stage=s.stage;}}catch(e){}
+const A = {psf:500, trades:['concrete'], days:30, boro:'', stage:'open'};
+try{const s=JSON.parse(localStorage.getItem('nyc-assume')||'null'); if(s){A.psf=s.psf||A.psf; if(Array.isArray(s.trades)){const t=s.trades.filter(k=>TRADES[k]);if(t.length)A.trades=t}else if(TRADES[s.trade])A.trades=[s.trade]; if(WINDOWS.includes(s.days))A.days=s.days; if(BOROS.includes(s.boro))A.boro=s.boro; if(['open','pre','permit'].includes(s.stage))A.stage=s.stage;}}catch(e){}
+if(D.trades&&D.trades.length){const t=D.trades.filter(k=>TRADES[k]);if(t.length)A.trades=t;}  // the account's trades win over this browser's
 let PREV='';
 try{const today=NOW.toISOString().slice(0,10), v=JSON.parse(localStorage.getItem('nyc-visit')||'null')||{}; PREV=v.last===today?(v.prev||''):(v.last||''); localStorage.setItem('nyc-visit',JSON.stringify({last:today,prev:PREV}));}catch(e){}
 const PUBLIC = /NYC Agency|NYCHA|School Construction|Government|HPD/;
@@ -69,7 +75,7 @@ function compute(){
     j.fromCost = j.cost>0;
     j.psf = Math.round(A.psf*psfTier(j)[0]);
     j.value = j.fromCost ? j.cost : j.sqfa*j.psf;
-    j.tv = tradeValue(j,A.trade);
+    j.tv = A.trades.reduce((a,k)=>a+tradeValue(j,k),0);
     j.c1 = !PUBLIC.test(j.ownerType) && j.stage>=0;
     j.c2 = j.c1 && (j.sqfa>=5000 || j.newUnits>=5 || j.cost>=SRC.altMinCost);
     j.c3 = j.c2 && j.sqfa<=250000 && j.cost<=50e6;
@@ -162,17 +168,17 @@ function tradeNeeds(j){
 }
 
 function emailOwner(j){
-  const T=TRADES[A.trade], first=(j.owner||'').split(' ')[0]||'there';
+  const T=TS(), first=(j.owner||'').split(' ')[0]||'there';
   const scope=[j.sqfa?`${fmtN(j.sqfa)} sq ft`:'', j.newUnits?`${j.newUnits} ${j.kind.k==='new'?'':'new '}units`:'', j.whole&&j.stories?`${j.stories} stories`:''].filter(Boolean).join(', ');
-  return `Subject: ${j.addr}, ${j.boro}: ${tname(A.trade)} pricing
+  return `Subject: ${j.addr}, ${j.boro}: ${tlabel()} pricing
 
 Hi ${first},
 
 I saw your ${j.kind.t.toLowerCase()} filing at ${j.addr} (DOB job ${j.id}${scope?', '+scope:''}). Congratulations on getting it into the Department of Buildings.
 
-From the filing, the ${tname(A.trade)} side looks like: ${tradeNeeds(j)[A.trade].slice(0,2).map(x=>x.replace(/\.$/,'')).join('; ').replace(/^./,c=>c.toLowerCase())}.
+From the filing, the ${tlabel()} side looks like: ${sideOf(j).map(x=>x.replace(/\.$/,'')).join('; ').replace(/^./,c=>c.toLowerCase())}.
 
-We do ${T.need} on projects like this across the five boroughs, including [two local jobs]. By our rough math the ${tname(A.trade)} package here is in the ${fmt$(j.tv*0.8)} to ${fmt$(j.tv*1.2)} range. We'd be glad to give you early pricing while the plans are ${j.stage<2?'still in review':'being finalized'}.
+We do ${T.need} on projects like this across the five boroughs, including [two local jobs]. By our rough math the ${tlabel()} package here is in the ${fmt$(j.tv*0.8)} to ${fmt$(j.tv*1.2)} range. We'd be glad to give you early pricing while the plans are ${j.stage<2?'still in review':'being finalized'}.
 
 ${j.gc?`I see ${j.gc[0]} is on the permit. If they are buying out the trades, I'm happy to send our number to them directly.`:'Can we get on the bid list?'} I'll call [Thursday] in case that's easier.
 
@@ -181,13 +187,13 @@ ${j.gc?`I see ${j.gc[0]} is on the permit. If they are buying out the trades, I'
 }
 function emailPro(j){
   const toGC=!!j.gc, who=toGC?j.gc[1]:j.applicant, first=(who||'').split(' ')[0]||'there';
-  return `${toGC&&j.gc[5]?'To: '+j.gc[5]+'\n':''}Subject: ${j.addr}, ${j.boro}: ${tname(A.trade)} sub
+  return `${toGC&&j.gc[5]?'To: '+j.gc[5]+'\n':''}Subject: ${j.addr}, ${j.boro}: ${tlabel()} sub
 
 Hi ${first},
 
-${toGC?`I saw ${j.gc[0]} pulled the ${j.gc[2].toLowerCase()} permit at ${j.addr} (DOB job ${j.id}).`:`I saw your filing for ${ownerName(j)} at ${j.addr} (DOB job ${j.id}).`} We're a [${tname(A.trade)}] contractor working across the five boroughs.
+${toGC?`I saw ${j.gc[0]} pulled the ${j.gc[2].toLowerCase()} permit at ${j.addr} (DOB job ${j.id}).`:`I saw your filing for ${ownerName(j)} at ${j.addr} (DOB job ${j.id}).`} We're a [${tlabel()}] contractor working across the five boroughs.
 
-${toGC?`Are you still taking ${tname(A.trade)} numbers on this one? We can turn a price around in [3 days] from the drawings.`:`When the owner is ready to price ${tname(A.trade)}, could you pass along our name, or tell me who is running the bid? We can also give budget pricing now if it helps the design.`}
+${toGC?`Are you still taking ${tlabel()} numbers on this one? We can turn a price around in [3 days] from the drawings.`:`When the owner is ready to price ${tlabel()}, could you pass along our name, or tell me who is running the bid? We can also give budget pricing now if it helps the design.`}
 
 Thanks,
 [Your name]
@@ -197,8 +203,7 @@ Thanks,
 const $ = s=>document.querySelector(s);
 function save(){try{localStorage.setItem('nyc-assume',JSON.stringify(A))}catch(e){}}
 function tradebar(){
-  $('#tradebar').innerHTML='<span class="lbl">Selling as</span>'+Object.entries(TRADES).map(([k,t])=>`<button class="tbtn ${k===A.trade?'on':''}" data-k="${k}" aria-pressed="${k===A.trade}">${t.n}</button>`).join('');
-  document.querySelectorAll('#tradebar .tbtn').forEach(b=>b.onclick=()=>{A.trade=b.dataset.k;save();tradebar();refresh()});
+  CC.tradePicker($('#tradebar'), TRADES, A.trades, t=>{A.trades=t;save();refresh();CC.saveTrades(t);});
 }
 function borobar(){
   $('#borobar').classList.toggle('hide', BOROS.length<2);
@@ -209,20 +214,20 @@ const callJobs = () => jobs.filter(j=>j.c4);
 const stageLabel = () => A.stage==='pre'?'before a permit':A.stage==='permit'?'with a permit issued':'still open';
 function ticker(){
   const stale=daysAgo(PULLED);
-  $('#ticker').innerHTML=`Pulled ${fdate(PULLED)}${stale>3?` <b style="color:var(--bad)">(${stale} days ago; the daily update is behind)</b>`:''} · <b>${fmtN(jobs.length)}</b> DOB filings read ·${PREV?` <b>${callJobs().filter(j=>j.fresh).length}</b> on the list since your last visit (${fdate(PREV)}) ·`:''} <b>${callJobs().length}</b> on the call list (${A.boro||(BOROS.length===5?'all boroughs':ALLB())}, last ${A.days} days) · $${A.psf}/sq ft where no cost is filed · ${TRADES[A.trade].n} at ${Math.round(TRADES[A.trade].s*100)}% of cost`;
+  $('#ticker').innerHTML=`Pulled ${fdate(PULLED)}${stale>3?` <b style="color:var(--bad)">(${stale} days ago; the daily update is behind)</b>`:''} · <b>${fmtN(jobs.length)}</b> DOB filings read ·${PREV?` <b>${callJobs().filter(j=>j.fresh).length}</b> on the list since your last visit (${fdate(PREV)}) ·`:''} <b>${callJobs().length}</b> on the call list (${A.boro||(BOROS.length===5?'all boroughs':ALLB())}, last ${A.days} days) · $${A.psf}/sq ft where no cost is filed · ${TS().n} at ${Math.round(TS().s*100)}% of cost`;
 }
 const sum=(l,k)=>l.reduce((a,j)=>a+j[k],0);
 function home(){
   const scope=jobs.filter(j=>(!A.boro||j.boro===A.boro)&&j.inWin);
-  const c=callJobs(), T=TRADES[A.trade];
+  const c=callJobs(), T=TS();
   $('#h-eyebrow').textContent=`${A.boro||(BOROS.length===5?'New York City, five boroughs':'New York City, '+ALLB())} · DOB NOW job filings · last ${A.days} days · pulled ${fdate(PULLED)}`;
   $('#h-big').textContent=fmt$(sum(c,'value'));
   const noGC=c.filter(j=>!j.gc);
-  $('#h-lede').innerHTML=`<b>${fmtN(scope.length)}</b> new buildings and major alterations were filed with the Department of Buildings in ${esc(A.boro||ALLB())} in the last ${A.days} days. <b>${c.length}</b> are private, local-builder size and ${stageLabel()}. That's about <b>${fmt$(sum(c,'tv'))}</b> of ${esc(tname(A.trade))} work, and <b>${noGC.length}</b> of them have no contractor on a permit yet. Everything filed in that window, including public work and megaprojects, totals ${fmt$(sum(scope,'value'))}.`;
+  $('#h-lede').innerHTML=`<b>${fmtN(scope.length)}</b> new buildings and major alterations were filed with the Department of Buildings in ${esc(A.boro||ALLB())} in the last ${A.days} days. <b>${c.length}</b> are private, local-builder size and ${stageLabel()}. That's about <b>${fmt$(sum(c,'tv'))}</b> of ${esc(tlabel())} work, and <b>${noGC.length}</b> of them have no contractor on a permit yet. Everything filed in that window, including public work and megaprojects, totals ${fmt$(sum(scope,'value'))}.`;
   const s1=scope.filter(j=>j.c1),s2=scope.filter(j=>j.c2),s3=scope.filter(j=>j.c3);
   const steps=[['Filed',`Initial DOB filings, last ${A.days} days`,scope],['Cut 1','Private owner, not withdrawn',s1],['Cut 2',`A real job: 5,000+ sq ft, 5+ units or ${fmt$(SRC.altMinCost)}+ filed cost`,s2],['Cut 3','Local-builder size: under 250,000 sq ft and $50M',s3],['Call list',A.stage==='open'?'Not yet signed off':A.stage==='pre'?'No permit issued yet':'Permit issued',c]];
   $('#funnel').innerHTML=`<div class="pad" style="padding-bottom:4px"><div class="eyebrow">The bid schedule</div><h3 style="margin:4px 0 8px">From every filing to the first call</h3></div>`+
-    steps.map((s,i)=>`<div class="step ${i>=4?'hot':''}"><div class="k">${s[0]}</div><div class="n">${fmtN(s[2].length)}</div><div class="t">${s[1]}</div><div class="m">${fmt$(sum(s[2],'value'))} est. value · ${fmt$(sum(s[2],'tv'))} ${esc(tname(A.trade))}<div class="bar"><span style="width:${(scope.length?s[2].length/scope.length*100:0).toFixed(1)}%"></span></div></div></div>`).join('');
+    steps.map((s,i)=>`<div class="step ${i>=4?'hot':''}"><div class="k">${s[0]}</div><div class="n">${fmtN(s[2].length)}</div><div class="t">${s[1]}</div><div class="m">${fmt$(sum(s[2],'value'))} est. value · ${fmt$(sum(s[2],'tv'))} ${esc(tlabel())}<div class="bar"><span style="width:${(scope.length?s[2].length/scope.length*100:0).toFixed(1)}%"></span></div></div></div>`).join('');
   const hoods={};c.forEach(j=>{const k=j.nta||j.boro;hoods[k]=(hoods[k]||0)+1});
   const topH=Object.entries(hoods).sort((a,b)=>b[1]-a[1])[0];
   $('#tiles').innerHTML=[
@@ -235,7 +240,7 @@ function home(){
   $('#top5').innerHTML=head(true)+top.map((j,i)=>row(j,i+1)).join('');
   bind('#top5'); drawMap();
 }
-function head(rank){return `<thead><tr>${rank?'<th>#</th>':''}<th>Filed</th><th>Project</th><th>Type and stage</th><th class="num">Sq ft</th><th class="num">New units</th><th class="num">Est. ${esc(tname(A.trade))}</th><th class="num">Score</th></tr></thead>`}
+function head(rank){return `<thead><tr>${rank?'<th>#</th>':''}<th>Filed</th><th>Project</th><th>Type and stage</th><th class="num">Sq ft</th><th class="num">New units</th><th class="num">Est. ${esc(tlabel())}</th><th class="num">Score</th></tr></thead>`}
 function row(j,rank){
   return `<tr class="row" data-id="${esc(j.id)}">${rank!==undefined?`<td class="rank">${rank}</td>`:''}<td class="num" style="text-align:left;white-space:nowrap">${fdate(j.date)}<div class="sub">${ago(j)}</div></td><td><div class="addr">${esc(j.addr)}${newPill(j)}${gcPill(j)}</div><div class="sub">${esc(j.nta?j.nta+', ':'')}${esc(j.boro)} · ${esc(ownerName(j))}</div><div class="sub" style="max-width:52ch;margin-top:2px">${esc(j.desc.length>150?j.desc.slice(0,150).replace(/\s+\S*$/,'')+'…':j.desc)}</div></td><td>${kindPill(j)}<div style="margin-top:4px">${stagePill(j)}</div></td><td class="num">${j.sqfa?fmtN(j.sqfa):'·'}</td><td class="num">${j.newUnits||'·'}</td><td class="num">${fmt$(j.tv)}</td><td class="num">${j.score||'·'}</td></tr>`;
 }
@@ -258,7 +263,7 @@ let callShown=PAGE, allShown=PAGE, freshOnly=false;
 function more(id,shown,total,fn){return total>shown?`<div class="pad" style="text-align:center"><button class="btn ghost" id="${id}">Show ${Math.min(PAGE,total-shown)} more (${fmtN(total-shown)} hidden)</button></div>`:''}
 function callList(){
   const c=callJobs().filter(j=>!freshOnly||j.fresh).sort((a,b)=>b.score-a.score);
-  $('#call-count').textContent=`${c.length} projects · ${fmt$(sum(c,'tv'))} of ${tname(A.trade)} work · sorted by score`;
+  $('#call-count').textContent=`${c.length} projects · ${fmt$(sum(c,'tv'))} of ${tlabel()} work · sorted by score`;
   $('#calltable').innerHTML=head(true)+'<tbody>'+c.slice(0,callShown).map((j,i)=>row(j,i+1)).join('')+'</tbody>';
   $('#callmore').innerHTML=more('callmorebtn',callShown,c.length);
   if($('#callmorebtn')) $('#callmorebtn').onclick=()=>{callShown+=PAGE;callList()};
@@ -272,7 +277,7 @@ function allJobs(){
   const val=sortVal[sortK]||(j=>j[sortK]);
   list.sort((x,y)=>{const a=val(x),bb=val(y);return (a>bb?1:a<bb?-1:0)*sortDir});
   $('#f-count').textContent=fmtN(list.length)+' filings';
-  const cols=[['age','Filed'],['name','Project'],['kind','Type and stage'],['sqfa','Sq ft','num'],['newUnits','New units','num'],['tv','Est. '+tname(A.trade),'num'],['score','Score','num']];
+  const cols=[['age','Filed'],['name','Project'],['kind','Type and stage'],['sqfa','Sq ft','num'],['newUnits','New units','num'],['tv','Est. '+tlabel(),'num'],['score','Score','num']];
   $('#alltable').innerHTML='<thead><tr>'+cols.map(k=>`<th class="${k[2]||''}" data-k="${k[0]}">${esc(k[1])}${sortK===k[0]?(sortDir>0?' ↑':' ↓'):''}</th>`).join('')+'</tr></thead><tbody>'+list.slice(0,allShown).map(j=>row(j)).join('')+'</tbody>';
   $('#allmore').innerHTML=more('allmorebtn',allShown,list.length);
   if($('#allmorebtn')) $('#allmorebtn').onclick=()=>{allShown+=PAGE;allJobs()};
@@ -282,7 +287,7 @@ function allJobs(){
 function people(){
   const c=callJobs();
   const group=(keyFn,roleFn)=>{const g=new Map();c.forEach(j=>{const k=keyFn(j);if(!k)return;const e=g.get(k)||{name:k,role:roleFn(j),jobs:[]};e.jobs.push(j);g.set(k,e)});return [...g.values()].filter(e=>e.jobs.length>1).sort((a,b)=>sum(b.jobs,'tv')-sum(a.jobs,'tv')).slice(0,40)};
-  const table=(rows,label)=>'<thead><tr><th>'+label+'</th><th class="num">Jobs on list</th><th class="num">Est. '+esc(tname(A.trade))+'</th><th>Projects</th></tr></thead><tbody>'+(rows.map(e=>`<tr><td class="addr">${esc(e.name)}<div class="sub">${esc(e.role)}</div><a class="sub" href="${esc(gsearch(e.name+' '+e.role+' New York'))}" target="_blank" rel="noopener">Look up ↗</a></td><td class="num">${e.jobs.length}</td><td class="num">${fmt$(sum(e.jobs,'tv'))}</td><td>${e.jobs.slice(0,12).map(j=>`<a class="chip" href="#job-${esc(j.id)}">${esc(j.addr)}</a>`).join('')}${e.jobs.length>12?`<span class="sub"> +${e.jobs.length-12} more</span>`:''}</td></tr>`).join('')||'<tr><td colspan="4" class="sub">Nobody has more than one job on the current call list. Widen the window.</td></tr>')+'</tbody>';
+  const table=(rows,label)=>'<thead><tr><th>'+label+'</th><th class="num">Jobs on list</th><th class="num">Est. '+esc(tlabel())+'</th><th>Projects</th></tr></thead><tbody>'+(rows.map(e=>`<tr><td class="addr">${esc(e.name)}<div class="sub">${esc(e.role)}</div><a class="sub" href="${esc(gsearch(e.name+' '+e.role+' New York'))}" target="_blank" rel="noopener">Look up ↗</a></td><td class="num">${e.jobs.length}</td><td class="num">${fmt$(sum(e.jobs,'tv'))}</td><td>${e.jobs.slice(0,12).map(j=>`<a class="chip" href="#job-${esc(j.id)}">${esc(j.addr)}</a>`).join('')}${e.jobs.length>12?`<span class="sub"> +${e.jobs.length-12} more</span>`:''}</td></tr>`).join('')||'<tr><td colspan="4" class="sub">Nobody has more than one job on the current call list. Widen the window.</td></tr>')+'</tbody>';
   $('#ownertable').innerHTML=table(group(j=>j.ownerBiz||j.owner,j=>'Owner · '+j.ownerType),'Owner or developer');
   $('#protable').innerHTML=table(group(j=>j.appBiz,j=>'Design firm'),'Architect or engineer');
   $('#gctable').innerHTML=table(group(j=>j.gc&&j.gc[0],j=>'Contractor on permit'),'General contractor');
@@ -294,17 +299,17 @@ function shareTable(){
 function jobView(id){
   const j=byId.get(id);
   if(!j){$('#v-job').innerHTML='<section><h2>Project not found</h2><p><a href="#jobs">Back to all filings</a></p></section>';return}
-  const T=TRADES[A.trade];
+  const T=TS();
   const why=j.stage<0?'The filing was withdrawn.':PUBLIC.test(j.ownerType)?'Public owner: goes to public bid.':!j.c2?'Under 5,000 sq ft, under 5 units and under '+fmt$(SRC.altMinCost)+' filed cost.':!j.c3?'Over 250,000 sq ft or $50M: a major-GC job.':!j.inWin?`Filed ${j.age} days ago, outside the last ${A.days} days.`:j.stage>=4?'Already signed off.':A.boro&&j.boro!==A.boro?'Outside the selected borough.':'Filtered out by the stage setting.';
   const sameOwner=jobs.filter(x=>x!==j&&(j.ownerBiz?x.ownerBiz===j.ownerBiz:x.owner===j.owner&&!x.ownerBiz)).slice(0,10);
   const steps=STAGES.map((s,i)=>`<div class="${i<=j.stage?'on':''}">${s}${i===0?' · '+fdate(j.date):i===2&&j.approved?' · '+fdate(j.approved):i===3&&j.permitDate?' · '+fdate(j.permitDate):''}</div>`).join('');
   const N=tradeNeeds(j);
-  const keys=[A.trade,...Object.keys(TRADES).filter(k=>k!==A.trade)];
+  const keys=[...A.trades,...Object.keys(TRADES).filter(k=>!A.trades.includes(k))];
   const team=[['Owner',j.ownerBiz||j.owner,j.ownerBiz?j.owner+' · '+j.ownerType:j.ownerType],[proTitle(j)+' of record',j.appBiz||j.applicant,j.appBiz?j.applicant+(j.appAddr?' · '+j.appAddr:''):j.appAddr],j.rep?['Filing representative (expediter)',j.rep,'Files the paperwork; knows where the job stands',j.repC]:null,j.gc?['Contractor on permit',j.gc[0],j.gc[1]+' · '+j.gc[2]+' permit issued '+fdate(j.gc[3]),[j.gc[4],j.gc[5]]]:null].filter(x=>x&&x[1]);
   $('#v-job').innerHTML=`<section>
     <div class="eyebrow"><a href="#call-list">Call list</a> / ${esc(j.boro)} / ${esc(j.id)}</div>
     <div class="job-hero"><div><h2>${esc(j.addr)}</h2><div class="sub" style="margin:-4px 0 8px">${esc(j.nta?j.nta+', ':'')}${esc(j.boro)} ${esc(j.zip)} · <b style="color:var(--ink)">Filed ${fdate(j.date)}</b> (${ago(j)})${newPill(j)}</div><div>${kindPill(j)} ${stagePill(j)} ${j.c4?`<span class="chip">Call list · score ${j.score}</span>`:`<span class="chip">Not on the call list. ${esc(why)}</span>`}</div></div>
-    <div style="text-align:right"><div class="eyebrow">Est. ${esc(tname(A.trade))}</div><div class="big" style="font-size:64px">${fmt$(j.tv)}</div><div class="sub">${j.fromCost?`of ${fmt$(j.value)} cost filed with DOB`:`of ${fmt$(j.value)} at $${j.psf}/sq ft for ${psfTier(j)[1]} (no cost filed)`}</div></div></div>
+    <div style="text-align:right"><div class="eyebrow">Est. ${esc(tlabel())}</div><div class="big" style="font-size:64px">${fmt$(j.tv)}</div><div class="sub">${j.fromCost?`of ${fmt$(j.value)} cost filed with DOB`:`of ${fmt$(j.value)} at $${j.psf}/sq ft for ${psfTier(j)[1]} (no cost filed)`}</div></div></div>
   </section>
   <div class="panel pad" style="margin-bottom:20px">
     <h3>Where it stands</h3>
@@ -328,7 +333,7 @@ function jobView(id){
       </dl>
     </div>
     <div style="display:grid;gap:20px">
-      <div class="panel pad"><h3>Every trade on this job</h3><table class="mini"><tbody>${Object.entries(TRADES).map(([k,t])=>`<tr${k===A.trade?' style="color:var(--accent)"':''}><td>${t.n}</td><td class="num">${fmt$(tradeValue(j,k))}</td></tr>`).join('')}</tbody></table><p class="note">Rule-of-thumb shares of ${j.fromCost?'the cost filed with DOB, which owners often understate':'an estimate from floor area'}.</p></div>
+      <div class="panel pad"><h3>Every trade on this job</h3><table class="mini"><tbody>${Object.entries(TRADES).map(([k,t])=>`<tr${A.trades.includes(k)?' style="color:var(--accent)"':''}><td>${t.n}</td><td class="num">${fmt$(tradeValue(j,k))}</td></tr>`).join('')}</tbody></table><p class="note">Rule-of-thumb shares of ${j.fromCost?'the cost filed with DOB, which owners often understate':'an estimate from floor area'}.</p></div>
       ${sameOwner.length?`<div class="panel pad"><h3>Same owner, other filings</h3>${sameOwner.map(s=>`<a class="chip" href="#job-${esc(s.id)}">${esc(s.addr)}</a>`).join('')}<p class="note">One relationship, several jobs.</p></div>`:''}
     </div>
   </div>
@@ -340,7 +345,7 @@ function jobView(id){
   <section style="padding-bottom:0"><div class="panel pad">
     <h3>What they need from each trade</h3>
     <p class="note" style="margin-top:-4px">Each card quotes the filing where it mentions the trade, then what the filing's numbers and checked work types mean. Your trade is first.</p>
-    <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">${keys.map(k=>{const E=evidence(j,k);return `<div class="card" style="${k===A.trade?'border-color:var(--accent)':''}"><b style="display:flex;justify-content:space-between;gap:8px"><span${k===A.trade?' style="color:var(--accent)"':''}>${TRADES[k].n}</span><span class="sub" style="font-family:var(--mono)">~${fmt$(tradeValue(j,k))}</span></b>${E.length?`<div style="margin:8px 0 6px;font-size:12.5px"><div class="eyebrow" style="margin-bottom:4px">The filing says</div>${E.map(e=>`<div style="border-left:2px solid var(--accent);padding:2px 0 2px 8px;margin-bottom:6px;color:var(--ink)">&ldquo;${esc(e)}&rdquo;</div>`).join('')}</div>`:`<div class="sub" style="margin:8px 0 6px;font-size:12px">The description doesn't mention this trade directly.</div>`}<div class="eyebrow" style="margin:8px 0 2px">What that means for you</div><ul style="margin:4px 0 0;padding-left:18px;font-size:13px;color:var(--mute)">${N[k].map(x=>`<li style="margin-bottom:4px">${esc(x)}${TYPICAL.test(x)?' <span class="chip" style="font-size:10px">typical, not stated</span>':''}</li>`).join('')}</ul></div>`}).join('')}</div>
+    <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">${keys.map(k=>{const E=evidence(j,k);return `<div class="card" style="${A.trades.includes(k)?'border-color:var(--accent)':''}"><b style="display:flex;justify-content:space-between;gap:8px"><span${A.trades.includes(k)?' style="color:var(--accent)"':''}>${TRADES[k].n}</span><span class="sub" style="font-family:var(--mono)">~${fmt$(tradeValue(j,k))}</span></b>${E.length?`<div style="margin:8px 0 6px;font-size:12.5px"><div class="eyebrow" style="margin-bottom:4px">The filing says</div>${E.map(e=>`<div style="border-left:2px solid var(--accent);padding:2px 0 2px 8px;margin-bottom:6px;color:var(--ink)">&ldquo;${esc(e)}&rdquo;</div>`).join('')}</div>`:`<div class="sub" style="margin:8px 0 6px;font-size:12px">The description doesn't mention this trade directly.</div>`}<div class="eyebrow" style="margin:8px 0 2px">What that means for you</div><ul style="margin:4px 0 0;padding-left:18px;font-size:13px;color:var(--mute)">${N[k].map(x=>`<li style="margin-bottom:4px">${esc(x)}${TYPICAL.test(x)?' <span class="chip" style="font-size:10px">typical, not stated</span>':''}</li>`).join('')}</ul></div>`}).join('')}</div>
   </div></section>
   <section>
     <div class="panel pad">
@@ -366,41 +371,16 @@ function jobView(id){
   window.scrollTo(0,0);
 }
 
-let hits=[];
+// The outline map (src/ccmap.js): filings in the time window that pass the size cuts, sized by the estimate for the selected trades.
+let MAP=null, MAPBORO=null;
 function drawMap(){
-  const cv=$('#map'); if(!cv||cv.offsetParent===null) return;
-  const dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
-  cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
-  const cosL=Math.cos(40.7*Math.PI/180);
-  const proj=j=>[(j.lng+74)*cosL,j.lat-40.7];
-  const all=jobs.filter(j=>j.lat&&j.lng&&j.lat>40.4&&j.lat<41&&j.lng>-74.3&&j.lng<-73.6);
-  const pts=all.filter(j=>j.inWin&&j.c3&&(!A.boro||j.boro===A.boro));
-  hits=[]; if(!pts.length) return;
-  const frame=(A.boro?pts:all).map(proj);
-  const xs=frame.map(p=>p[0]),ys=frame.map(p=>p[1]);
-  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
-  const pad=26,top=70;
-  const s=Math.min((W-2*pad)/(maxX-minX||1),(H-top-pad)/(maxY-minY||1));
-  const ox=pad+((W-2*pad)-(maxX-minX)*s)/2;
-  const Tf=p=>[ox+(p[0]-minX)*s,H-pad-(p[1]-minY)*s];
-  g.strokeStyle='#232b36';g.lineWidth=1;
-  for(let i=0;i<=8;i++){const yy=minY+(maxY-minY)*i/8,a=Tf([minX,yy]),b=Tf([maxX,yy]);g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();const xx=minX+(maxX-minX)*i/8,c=Tf([xx,minY]),d=Tf([xx,maxY]);g.beginPath();g.moveTo(c[0],c[1]);g.lineTo(d[0],d[1]);g.stroke();}
-  const items=pts.map(j=>({j,p:Tf(proj(j))})).sort((a,b)=>(a.j.c4-b.j.c4)||(a.p[1]-b.p[1]));
-  const bw=3;
-  items.forEach(({j,p})=>{
-    const h=4+Math.sqrt(Math.min(j.value,50e6)/50e6)*70;
-    const hot=j.c4;
-    g.fillStyle=hot?'#f5a623':'#4b5f75';g.fillRect(p[0]-bw,p[1]-h,bw,h);
-    g.fillStyle=hot?'#c7850e':'#38485a';g.fillRect(p[0],p[1]-h,bw,h);
-    hits.push({x:p[0],y0:p[1]-h-3,y1:p[1],j});
-  });
-  if(!A.boro){
-    const bc={};all.forEach(j=>{const q=Tf(proj(j));const e=bc[j.boro] ||= {x:0,y:0,n:0};e.x+=q[0];e.y+=q[1];e.n++});
-    g.font='600 11px "IBM Plex Mono", monospace';g.textAlign='center';
-    Object.entries(bc).forEach(([k,v])=>{const x=v.x/v.n,y=v.y/v.n+16;const w=g.measureText(k).width+12;g.fillStyle='rgba(18,22,28,.85)';g.fillRect(x-w/2,y-12,w,18);g.fillStyle='#e8ecf1';g.fillText(k,x,y+1)});
-  }
+  const box=$('#map'); if(!box||box.offsetParent===null||!window.CCMap) return;
+  if(!MAP) MAP=new CCMap(box,{shapes:window.CC_SHAPES||{}, mine:D.areas, hint:$('#map-hint'), unit:'borough', onOpen:id=>{location.hash='job-'+id}});
+  MAP.setItems(jobs.filter(j=>j.lat&&j.lng&&j.inWin&&j.c3&&(!A.boro||j.boro===A.boro)).map(j=>({id:j.id, lat:j.lat, lng:j.lng, v:j.tv, hot:!!j.c4,
+    title:j.addr, sub:`${j.boro} · ${j.kind.t} · filed ${j.age===0?'today':j.age===1?'yesterday':j.age+' days ago'}`,
+    val:`${fmt$(j.tv)} est. ${tlabel()}${j.c4?'':' · not on your call list'}`})));
+  if(A.boro!==MAPBORO){ MAPBORO=A.boro; A.boro ? MAP.fitArea(A.boro) : MAP.fitMine(); }
 }
-function hitAt(ev){const r=$('#map').getBoundingClientRect();const x=ev.clientX-r.left,y=ev.clientY-r.top;let best=null,bd=7;for(let i=hits.length-1;i>=0;i--){const h=hits[i];const dx=Math.abs(h.x-x);if(dx<bd&&y>=h.y0-4&&y<=h.y1+4){bd=dx;best=h}}return best}
 
 function refresh(){compute();callShown=PAGE;allShown=PAGE;ticker();route()}
 function route(){
@@ -417,9 +397,6 @@ function init(){
   STAGES.forEach((s,i)=>$('#f-st').insertAdjacentHTML('beforeend',`<option value="${i}">${esc(s)}</option>`));
   ['#f-q','#f-b','#f-s','#f-st','#f-c'].forEach(s=>$(s).addEventListener('input',()=>{allShown=PAGE;allJobs()}));
   tradebar();borobar();assumeControls();
-  const cv=$('#map');
-  cv.addEventListener('mousemove',e=>{const h=hitAt(e);cv.style.cursor=h?'pointer':'crosshair';$('#map-hint').textContent=h?`${h.j.addr}, ${h.j.boro} · ${fmt$(h.j.value)} · ${h.j.kind.t} · ${h.j.stage<0?'Withdrawn':STAGES[h.j.stage]}`:'Bar height is estimated value. Click a bar to open the project.'});
-  cv.addEventListener('click',e=>{const h=hitAt(e);if(h)location.hash='job-'+h.j.id});
   window.addEventListener('resize',()=>{if(!$('#v-home').classList.contains('hide'))drawMap()});
   window.addEventListener('hashchange',route);
   refresh();

@@ -53,6 +53,8 @@
   CC.accountBar('areas', profile);
   const first = !profile.areas.length;
   const picked = new Set(profile.areas);
+  const local = () => { for(const key of ['wcl-assume','nyc-assume']){ try{ const a=JSON.parse(localStorage.getItem(key)||'null'); if(a){ const t=Array.isArray(a.trades)?a.trades:a.trade?[a.trade]:[]; const ok=t.filter(k=>CC.TRADES[k]); if(ok.length) return ok; } }catch(e){} } return []; };
+  let trades = profile.trades.length ? profile.trades : first ? [] : local();
   if(!list){ $('#page').innerHTML = '<div class="cc-empty"><h2>Areas are being set up</h2><p>Project data hasn\'t been loaded yet. Check back after the next morning update.</p></div>'; return; }
 
   const region = (key, title, unit, rows, filter) => `
@@ -72,8 +74,12 @@
 
   $('#page').innerHTML = `
     <div class="eyebrow">${first ? 'Step 2 of 2' : 'Your account'}</div>
-    <h1>${first ? 'Pick the areas you work in' : 'My areas'}</h1>
-    <p class="lede">Turn on each town and borough you want projects from. Your call list only shows these, and you can change them any time.</p>
+    <h1>${first ? 'Your trades and areas' : 'My trades and areas'}</h1>
+    <p class="lede">Pick what you sell and turn on each town and borough you want projects from. Your call list and estimates follow these, and you can change them any time.</p>
+    <section class="region" data-r="trades">
+      <div class="region-head"><h2>What do you sell?<small>pick all that apply</small></h2></div>
+      <div class="cc-chips">${Object.entries(CC.TRADES).map(([k,n])=>`<button type="button" class="cc-chip" data-t="${k}" aria-pressed="${trades.includes(k)}">${esc(n)}</button>`).join('')}</div>
+    </section>
     ${region('nyc', 'New York City', 'boroughs', list.nyc||[], false)}
     ${region('wc', 'Westchester County', 'towns', list.wc||[], true)}
     <div class="savebar"><div class="in">
@@ -87,10 +93,14 @@
     const on = boxes().filter(b=>b.checked);
     const n = r => on.filter(b=>b.value.startsWith(r+':')).length;
     const projects = on.reduce((s,b)=>s+(+b.closest('.tog').querySelector('.ct').textContent.split(' ')[0]||0),0);
-    $('#sum').innerHTML = on.length ? `<b>${n('wc')}</b> Westchester towns · <b>${n('nyc')}</b> boroughs · <b>${projects.toLocaleString()}</b> projects` : 'Nothing picked yet';
+    $('#sum').innerHTML = (trades.length ? `<b>${trades.length}</b> trade${trades.length===1?'':'s'} · ` : '') + (on.length ? `<b>${n('wc')}</b> Westchester towns · <b>${n('nyc')}</b> boroughs · <b>${projects.toLocaleString()}</b> projects` : 'No areas picked yet');
     $('#msg').textContent = '';
   }
   document.addEventListener('change', e => { if(e.target.matches('.tog input')) sync(); });
+  document.querySelectorAll('.cc-chip').forEach(c => c.onclick = () => {
+    const k=c.dataset.t; trades = trades.includes(k) ? trades.filter(x=>x!==k) : [...trades, k];
+    c.setAttribute('aria-pressed', trades.includes(k)); sync();
+  });
   document.querySelectorAll('[data-all],[data-none]').forEach(btn => btn.onclick = () => {
     const r = btn.dataset.all || btn.dataset.none;
     document.querySelectorAll(`[data-r="${r}"] .tog:not(.hide) input`).forEach(b => b.checked = !!btn.dataset.all);
@@ -105,10 +115,14 @@
   $('#save').onclick = async () => {
     const areas = boxes().filter(b=>b.checked).map(b=>b.value);
     const msg = $('#msg'), btn = $('#save');
+    if(!trades.length){ msg.className = 'msg err'; msg.textContent = 'Pick at least one trade you sell.'; document.querySelector('[data-r=trades]').scrollIntoView({behavior:'smooth',block:'center'}); return; }
     if(!areas.length){ msg.className = 'msg err'; msg.textContent = 'Turn on at least one town or borough.'; return; }
     btn.disabled = true;
     try {
-      await CC.saveAreas(user, areas);
+      await CC.saveAreas(user, areas, trades);
+      // Keep this browser in step too (the apps also remember trades locally).
+      for(const key of ['wcl-assume','nyc-assume']){ try{ const a=JSON.parse(localStorage.getItem(key)||'null')||{}; a.trades=trades; delete a.trade; localStorage.setItem(key, JSON.stringify(a)); }catch(e){} }
+      profile.trades = trades;
       if(first) return location.replace(CC.home(areas));
       msg.className = 'msg ok'; msg.textContent = 'Saved.';
       document.querySelectorAll('.cc-bar').forEach(b=>b.remove());

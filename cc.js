@@ -5,7 +5,8 @@
 const SB_URL = "https://oalgkxghwxosmmjirzti.supabase.co", SB_KEY = "sb_publishable_D1Kdu9-RiZa8eXasvXWlCw_G2Dnq-uz";
 const CC = window.CC = {};
 CC.configured = /^https:\/\//.test(SB_URL) && SB_KEY.length > 20;
-CC.sb = CC.configured && window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+// keepalive lets a save that starts as the user leaves the page still finish.
+CC.sb = CC.configured && window.supabase ? window.supabase.createClient(SB_URL, SB_KEY, {global:{fetch:(u,o={})=>fetch(u, o.method==='PATCH' ? {...o, keepalive:true} : o)}}) : null;
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 CC.esc = esc;
 CC.STACK = '<a class="cc-mark stack" href="index.html" aria-label="Contract Connect home"><img class="cc-ic" src="assets/icon.png" alt=""><span class="c1">Contract</span><span class="c2">Connect</span><span class="cc-tag">FIND\nBID\nWIN</span></a>';
@@ -29,14 +30,60 @@ CC.requireUser = async () => {
   return s.user;
 };
 
+// The trades a user can sell. Keys match TRADES in both apps.
+CC.TRADES = {gc:'GC / framing', concrete:'Concrete', site:'Site work', hvac:'HVAC', elec:'Electrical', plumb:'Plumbing', roof:'Roofing', windows:'Windows & doors', paint:'Painting'};
+
 CC.profile = async () => {
-  const {data, error} = await CC.sb.from('profiles').select('email,areas,has_access').maybeSingle();
+  const {data, error} = await CC.sb.from('profiles').select('*').maybeSingle();
   if(error) throw error;
-  return data || {areas:[], has_access:true};
+  const p = data || {areas:[], has_access:true};
+  p.trades = (p.trades||[]).filter(k=>CC.TRADES[k]);
+  return p;
 };
-CC.saveAreas = async (user, areas) => {
-  const {error} = await CC.sb.from('profiles').update({areas}).eq('id', user.id);
+// Save profile fields. If the trades column hasn't been added yet (supabase/schema.sql), save the rest without it.
+CC.saveProfile = async (user, fields) => {
+  let {error} = await CC.sb.from('profiles').update(fields).eq('id', user.id);
+  if(error && 'trades' in fields && /trades/.test(error.message||'')){
+    const {trades, ...rest} = fields;
+    ({error} = Object.keys(rest).length ? await CC.sb.from('profiles').update(rest).eq('id', user.id) : {error:null});
+  }
   if(error) throw error;
+};
+CC.saveAreas = (user, areas, trades) => CC.saveProfile(user, trades ? {areas, trades} : {areas});
+// Called by the apps' trade picker. Both apps' local settings update at once; the account is saved after a short pause
+// (several clicks in a row make one save), or right away if the user leaves the page first.
+CC.saveTrades = trades => {
+  for(const key of ['wcl-assume','nyc-assume']){ try{ const a=JSON.parse(localStorage.getItem(key)||'null')||{}; a.trades=trades; delete a.trade; localStorage.setItem(key, JSON.stringify(a)); }catch(e){} }
+  CC._pending = trades; clearTimeout(CC._tt); CC._tt = setTimeout(CC.flushTrades, 300);
+};
+CC.flushTrades = () => {
+  clearTimeout(CC._tt); const t = CC._pending; CC._pending = null;
+  if(t && CC.user) CC.saveProfile(CC.user, {trades:t}).catch(()=>{});
+};
+addEventListener('pagehide', () => CC.flushTrades());
+document.addEventListener('visibilitychange', () => { if(document.visibilityState==='hidden') CC.flushTrades(); });
+
+// "Selling: Concrete + HVAC ▾" with a checklist of trades. onChange gets the new list (never empty, in the order picked).
+CC.tradePicker = (el, TRADES, selected, onChange) => {
+  let cur = [...selected];
+  el.innerHTML = `<span class="lbl">Selling</span><div class="cc-tp">
+    <button type="button" class="cc-tp-btn" aria-haspopup="true" aria-expanded="false"><span class="cc-tp-val"></span><i aria-hidden="true">▾</i></button>
+    <div class="cc-tp-menu hide" role="group" aria-label="Trades you sell">
+      ${Object.entries(TRADES).map(([k,t])=>`<label><input type="checkbox" value="${k}"><span>${esc(t.n)}</span></label>`).join('')}
+      <div class="cc-tp-foot">Pick every trade you sell. Estimates add them up.</div></div></div>`;
+  const btn = el.querySelector('.cc-tp-btn'), menu = el.querySelector('.cc-tp-menu'), boxes = [...menu.querySelectorAll('input')];
+  const sync = () => { el.querySelector('.cc-tp-val').textContent = cur.map(k=>TRADES[k].n).join(' + '); boxes.forEach(b=>b.checked=cur.includes(b.value)); };
+  const open = on => { menu.classList.toggle('hide', !on); btn.setAttribute('aria-expanded', on); };
+  btn.onclick = e => { e.stopPropagation(); open(menu.classList.contains('hide')); };
+  menu.onclick = e => e.stopPropagation();
+  boxes.forEach(b => b.onchange = () => {
+    const next = b.checked ? [...cur, b.value] : cur.filter(k=>k!==b.value);
+    if(!next.length){ b.checked = true; el.querySelector('.cc-tp-foot').textContent = 'Keep at least one trade.'; return; }
+    cur = next; sync(); onChange([...cur]);
+  });
+  if(!CC._tpDoc){ CC._tpDoc = true; document.addEventListener('click', () => document.querySelectorAll('.cc-tp-menu').forEach(m=>{m.classList.add('hide'); m.previousElementSibling.setAttribute('aria-expanded', false);})); 
+    document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.cc-tp-menu').forEach(m=>m.classList.add('hide')); }); }
+  sync();
 };
 CC.meta = async key => {
   const {data, error} = await CC.sb.from('meta').select('payload').eq('key', key).maybeSingle();
@@ -86,6 +133,7 @@ CC.boot = async (region, start) => {
   let user, profile;
   try { user = await CC.requireUser(); profile = await CC.profile(); }
   catch(e){ if(e.message!=='not configured' && e.message!=='signed out') message('Something went wrong', `<p>${esc(e.message)}</p>`); return; }
+  CC.user = user;
   CC.accountBar(region, profile);
   const R = CC.REGIONS[region];
   const mine = profile.areas.filter(a=>a.startsWith(region+':')).map(a=>a.slice(region.length+1));
@@ -99,7 +147,7 @@ CC.boot = async (region, start) => {
   main.prepend(loading);
   try {
     const rows = await all('projects', 'payload', q => q.eq('region', region).order('id'));
-    const D = {areas: mine};
+    const D = {areas: mine, trades: profile.trades};
     if(region === 'wc'){
       D.RAW = []; D.EV = {}; D.ATT = {}; D.TEAM = {}; D.PERMITS = {}; D.CONTACTS = {};
       rows.forEach(({payload:p}) => {

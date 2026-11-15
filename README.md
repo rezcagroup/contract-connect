@@ -14,10 +14,15 @@ Early construction leads for Westchester County and New York City. Public landin
 
 Sources are in `src/`; `python3 build.py` writes the pages above plus `cc.js` and `cc.css`. **The built pages contain no project data.** After sign-in, the app pages load data from Supabase, and the database returns only rows in the areas the user picked.
 
+## Map and trades
+
+- **Map** (`src/ccmap.js`, used by both apps): town and borough outlines, the user's areas lit up, one circle per project sized by the estimate for the user's trades (orange = call list, gray = filtered out). Zoom with the +/− buttons, Ctrl/⌘ + scroll, a double-click or two fingers; drag to move; click a town or borough to zoom to it. Outlines are in `data/shapes.json`, made by `python3 pull_shapes.py` from NYC Open Data (borough boundaries) and Westchester County GIS (municipal boundaries). Boundaries rarely change, so run it only if they do.
+- **Trades**: each account can sell several trades. Estimates, tables and emails add up the selected trades; with one trade everything reads as before. Users pick trades at sign-up (on the areas page) and switch them with the "Selling" menu in the apps. They are saved in `profiles.trades` (add the column with `supabase/2026-11-add-trades.sql` on a database set up before this change).
+
 ## How access works
 
 - **Supabase** handles accounts and stores the data. Tables and rules: `supabase/schema.sql`.
-- `profiles.areas` holds each user's picks (`wc:Yonkers`, `nyc:Brooklyn`, ...). Users can change only that column.
+- `profiles.areas` holds each user's picks (`wc:Yonkers`, `nyc:Brooklyn`, ...) and `profiles.trades` the trades they sell. Users can change only those two columns.
 - `profiles.has_access` is the paywall switch. It is `true` for everyone for now; payments will set it later. Users cannot change it.
 - `projects` and `area_info` (town contacts) can be read only by signed-in users with access, and only for their areas. Signed-out visitors can read nothing.
 - `push_supabase.py` uploads the data with the secret key. The daily job runs it after the pulls.
@@ -139,3 +144,7 @@ Source files: `src/nyc_body.html`, `src/nyc_script.js` (placeholder `__NYC__`); 
 ### Daily refresh and hosting
 
 `.github/workflows/refresh.yml` pulls the NYC data every morning, uploads it to Supabase, rebuilds the pages and publishes them with GitHub Pages. The published pages hold no data. Nothing is committed back to the repo, so `data/nyc.json` in git is only as fresh as the last manual pull.
+
+## Approval guide
+
+`docs/how-projects-get-approved.pdf` is a 10-page flowchart of how a private project gets approved and built, Westchester on pages 1-5 and NYC on pages 6-10. It was last checked against the law in November 2026; re-check it before publishing any of it to customers, since the rules change. It is the template for researching a new market: find that area's earliest public filing and the steps after it. The source is `docs/how-projects-get-approved.html`: edit the `PAGES` list in the script near the top of that file, then run `node docs/print_pdf.cjs` (needs Playwright) to reprint the PDF.

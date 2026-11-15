@@ -5,6 +5,7 @@
 -- How access works:
 --   * Every signed-up user gets a row in profiles (created automatically).
 --   * profiles.areas is the list of towns and boroughs the user turned on, e.g. {'wc:Yonkers','nyc:Brooklyn'}.
+--   * profiles.trades is the list of trades the user sells, e.g. {'concrete','hvac'} (keys of TRADES in the apps).
 --   * profiles.has_access is the paywall switch. It defaults to true (everyone gets full access until payments exist).
 --     Users cannot change it themselves; later a payment webhook will set it.
 --   * A user can read a project, or a town's contacts, only if has_access is true and that area is in their list.
@@ -18,6 +19,8 @@ create table if not exists public.profiles (
   has_access  boolean not null default true,
   created_at  timestamptz not null default now()
 );
+-- Added after launch; safe to run on a database that already has it.
+alter table public.profiles add column if not exists trades text[] not null default '{}';
 alter table public.profiles enable row level security;
 
 drop policy if exists "read own profile" on public.profiles;
@@ -28,10 +31,10 @@ drop policy if exists "update own profile" on public.profiles;
 create policy "update own profile" on public.profiles
   for update to authenticated using ((select auth.uid()) = id) with check ((select auth.uid()) = id);
 
--- Users may change only their area list, never has_access, email or id.
+-- Users may change only their areas and trades, never has_access, email or id.
 revoke all on public.profiles from anon, authenticated;
 grant select on public.profiles to authenticated;
-grant update (areas) on public.profiles to authenticated;
+grant update (areas, trades) on public.profiles to authenticated;
 
 -- Create the profile when someone signs up.
 create or replace function public.handle_new_user() returns trigger
