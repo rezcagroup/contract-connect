@@ -91,8 +91,8 @@ write("cc.js", (SRC / "cc.js").read_text().replace("__SB_URL__", url).replace("_
 write("cc.css", (SRC / "cc.css").read_text())
 write("ccmap.js", (SRC / "ccmap.js").read_text())
 landing = (SRC / "landing.html").read_text()
-# The landing page lists the Westchester municipalities that have projects right now (public names only, no project data).
-landing = landing.replace("__WC_TOWNS__", json.dumps(sorted({r[3] for r in json.loads((R / "data" / "data.json").read_text())})))
+# The landing page lists every Westchester area customers can pick (from the county map; public names only).
+landing = landing.replace("__WC_TOWNS__", json.dumps(sorted(SHAPES.get("wc", {}))))
 landing = landing.replace('<link rel="stylesheet" href="cc.css">', ICONS + SHARE + '<link rel="stylesheet" href="cc.css">', 1)
 write("index.html", landing.replace("family=Barlow+Condensed:wght@600;700;800&", "family=Barlow+Condensed:wght@600;700;800;900&"))
 for page in ("login.html", "areas.html"):
