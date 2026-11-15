@@ -70,3 +70,36 @@ a.cc-mark.light,.cc-mark.light{color:var(--accent-ink)}
 .cc-small{font-size:13px;color:var(--mute);margin-top:16px;text-align:center}
 .cc-linkbtn{background:none;border:0;padding:0;color:var(--accent);font:inherit;cursor:pointer;text-decoration:underline}
 .hide{display:none!important}
+
+/* Outline map (src/ccmap.js) */
+.ccmap{position:relative;height:470px;background:#161c24;overflow:hidden;user-select:none}
+.ccmap canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:pan-x pan-y}
+@media (max-width:600px){.ccmap{height:380px}}
+.ccmap-ctl{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;border:1px solid var(--line);background:rgba(20,26,34,.9)}
+.ccmap-ctl button{width:32px;height:32px;background:none;border:0;color:var(--ink);font:600 18px/1 var(--body);cursor:pointer}
+.ccmap-ctl button+button{border-top:1px solid var(--line)}
+.ccmap-ctl button:hover{background:var(--line)}
+.ccmap-card{position:absolute;max-width:280px;background:#0e1218;border:1px solid var(--accent);padding:9px 11px;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.45);z-index:2}
+.ccmap-card.touch{pointer-events:auto}
+.ccmap-card b{display:block;font:700 15px/1.15 var(--display);text-transform:uppercase;letter-spacing:.02em;color:var(--ink)}
+.ccmap-card span{display:block;font-size:12px;color:var(--mute);margin:3px 0}
+.ccmap-card em{display:block;font:500 12px var(--mono);font-style:normal;color:var(--accent)}
+.ccmap-card button{margin-top:8px;width:100%;background:var(--accent);color:var(--accent-ink);border:0;padding:8px;font:700 14px var(--display);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.ccmap-toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:rgba(14,18,24,.92);border:1px solid var(--line);color:var(--ink);font-size:13px;padding:6px 12px;pointer-events:none}
+
+/* Trade picker in the apps: "Selling: Concrete + HVAC ▾" */
+.cc-tp{position:relative}
+.cc-tp-btn{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--accent);color:var(--ink);padding:6px 12px;font:700 14px var(--display);letter-spacing:.05em;text-transform:uppercase;cursor:pointer;max-width:80vw;text-align:left}
+.cc-tp-btn .cc-tp-val{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cc-tp-btn i{font-style:normal;color:var(--accent)}
+.cc-tp-menu{position:absolute;z-index:20;top:calc(100% + 6px);left:0;min-width:240px;background:#0e1218;border:1px solid var(--line);box-shadow:0 10px 26px rgba(0,0,0,.5);padding:6px}
+.cc-tp-menu label{display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer;font:600 15px var(--display);letter-spacing:.04em;text-transform:uppercase}
+.cc-tp-menu label:hover{background:var(--panel)}
+.cc-tp-menu input{accent-color:var(--accent);width:16px;height:16px}
+.cc-tp-foot{font-size:12px;color:var(--mute);padding:6px 10px 4px;border-top:1px solid var(--line);margin-top:4px}
+
+/* Trade chips on the area picker page */
+.cc-chips{display:flex;flex-wrap:wrap;gap:8px;padding:16px 18px 18px}
+.cc-chip{font:700 15px var(--display);letter-spacing:.05em;text-transform:uppercase;background:var(--bg);border:1px solid var(--line);color:var(--mute);padding:9px 14px;cursor:pointer}
+.cc-chip:hover{border-color:var(--mute);color:var(--ink)}
+.cc-chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}

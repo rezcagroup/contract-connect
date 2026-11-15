@@ -7,6 +7,7 @@ Pages (written to the repo root and published by the daily GitHub job):
   westchester.html  Westchester app (County Planning Board referrals)
   nyc.html          NYC app (Department of Buildings filings)
   cc.js, cc.css     shared sign-in code and styles
+  ccmap.js          the outline map both apps use (shapes from data/shapes.json, see pull_shapes.py)
 
 No project data goes into these files. The app pages load it after sign-in from Supabase, which returns only the
 areas the user picked (see supabase/schema.sql and push_supabase.py). Supabase settings come from site_config.json.
@@ -37,6 +38,9 @@ def write(out, text):
     print("Built", out, len(text), "bytes")
 
 
+SHAPES = json.loads((R / "data" / "shapes.json").read_text()) if (R / "data" / "shapes.json").exists() else {}
+
+
 def app(out, title, body, script, region, swaps):
     """An app page: the old page's markup and styles, with its script wrapped to run once CC.boot has the user's data."""
     js = (SRC / script).read_text()
@@ -48,7 +52,9 @@ def app(out, title, body, script, region, swaps):
         body_html = body_html.replace("__PULLED__", re.search(r'const PULLED = "([^"]*)";', js).group(1))
     head = (SRC / "head.html").read_text().replace("Westchester Construction Lead Machine", title)
     head = head.replace("family=Barlow+Condensed:wght@600;700;800&", "family=Barlow+Condensed:wght@600;700;800;900&")
-    head += ICONS + '<link rel="stylesheet" href="cc.css">\n' + SB
+    head += ICONS + '<link rel="stylesheet" href="cc.css">\n' + SB + '<script src="ccmap.js"></script>\n'
+    # Town / borough outlines for the map (public boundary data, not project data).
+    head += '<script>window.CC_SHAPES=' + json.dumps(SHAPES.get(region, {}), separators=(',', ':')) + ';</script>\n'
     write(out, head + (SRC / "css.txt").read_text() + "\n</head>\n" + body_html
           + f"<script>\nCC.boot('{region}', function(D){{\n" + js + "\n});\n</script>\n</body>\n</html>\n")
 
@@ -73,6 +79,7 @@ if not (url and key):
     print("Note: site_config.json has no Supabase URL/key yet; sign-in pages will say accounts aren't switched on.")
 write("cc.js", (SRC / "cc.js").read_text().replace("__SB_URL__", url).replace("__SB_KEY__", key))
 write("cc.css", (SRC / "cc.css").read_text())
+write("ccmap.js", (SRC / "ccmap.js").read_text())
 landing = (SRC / "landing.html").read_text()
 landing = landing.replace('<link rel="stylesheet" href="cc.css">', ICONS + SHARE + '<link rel="stylesheet" href="cc.css">', 1)
 write("index.html", landing.replace("family=Barlow+Condensed:wght@600;700;800&", "family=Barlow+Condensed:wght@600;700;800;900&"))

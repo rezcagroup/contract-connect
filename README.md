@@ -14,10 +14,15 @@ Early construction leads for Westchester County and New York City. Public landin
 
 Sources are in `src/`; `python3 build.py` writes the pages above plus `cc.js` and `cc.css`. **The built pages contain no project data.** After sign-in, the app pages load data from Supabase, and the database returns only rows in the areas the user picked.
 
+## Map and trades
+
+- **Map** (`src/ccmap.js`, used by both apps): town and borough outlines, the user's areas lit up, one circle per project sized by the estimate for the user's trades (orange = call list, gray = filtered out). Zoom with the +/− buttons, Ctrl/⌘ + scroll, a double-click or two fingers; drag to move; click a town or borough to zoom to it. Outlines are in `data/shapes.json`, made by `python3 pull_shapes.py` from NYC Open Data (borough boundaries) and Westchester County GIS (municipal boundaries). Boundaries rarely change, so run it only if they do.
+- **Trades**: each account can sell several trades. Estimates, tables and emails add up the selected trades; with one trade everything reads as before. Users pick trades at sign-up (on the areas page) and switch them with the "Selling" menu in the apps. They are saved in `profiles.trades` (add the column with `supabase/2026-11-add-trades.sql` on a database set up before this change).
+
 ## How access works
 
 - **Supabase** handles accounts and stores the data. Tables and rules: `supabase/schema.sql`.
-- `profiles.areas` holds each user's picks (`wc:Yonkers`, `nyc:Brooklyn`, ...). Users can change only that column.
+- `profiles.areas` holds each user's picks (`wc:Yonkers`, `nyc:Brooklyn`, ...) and `profiles.trades` the trades they sell. Users can change only those two columns.
 - `profiles.has_access` is the paywall switch. It is `true` for everyone for now; payments will set it later. Users cannot change it.
 - `projects` and `area_info` (town contacts) can be read only by signed-in users with access, and only for their areas. Signed-out visitors can read nothing.
 - `push_supabase.py` uploads the data with the secret key. The daily job runs it after the pulls.
