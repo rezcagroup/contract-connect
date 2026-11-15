@@ -1,4 +1,4 @@
-# Pulls fresh NYC DOB filings and Westchester County referrals every morning (the schedule fires several times a day because GitHub delays cron runs),
+# Pulls fresh NYC DOB filings, Westchester County referrals and open NYC construction bids every morning (the schedule fires several times a day because GitHub delays cron runs),
 # uploads them to Supabase (where signed-in users read only the areas they picked), rebuilds the Contract Connect pages and publishes them with GitHub Pages.
 # The published pages hold no project data.
 # Needs repository secrets SUPABASE_URL and SUPABASE_SECRET_KEY (Settings -> Secrets and variables -> Actions).
@@ -47,6 +47,12 @@ jobs:
         # If the county service is down, publish with the Westchester data already in the repo.
         continue-on-error: true
         run: python3 pull_westchester.py
+      - name: Pull open NYC construction bids
+        # If NYC Open Data is down, upload the bids already in the repo (the page hides any whose due date has passed).
+        continue-on-error: true
+        env:
+          NYC_APP_TOKEN: ${{ secrets.NYC_APP_TOKEN }}
+        run: python3 pull_bids.py
       - name: Upload data to Supabase
         # If Supabase is unreachable, users keep yesterday's data and the pages still publish.
         continue-on-error: true
@@ -58,7 +64,7 @@ jobs:
         run: |
           python3 build.py
           mkdir _site
-          cp index.html login.html areas.html westchester.html nyc.html cc.js cc.css ccmap.js _site/
+          cp index.html login.html areas.html westchester.html nyc.html bids.html cc.js cc.css ccmap.js _site/
           cp -r assets _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

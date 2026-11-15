@@ -59,11 +59,11 @@ $$;
 revoke all on function public.can_see(text) from public, anon;
 grant execute on function public.can_see(text) to authenticated;
 
--- Projects: one row per Westchester referral or NYC filing ----------------------------------------
+-- Projects: one row per Westchester referral, NYC filing or open public bid ----------------------------------------
 create table if not exists public.projects (
-  region      text not null,             -- 'wc' or 'nyc'
+  region      text not null,             -- 'wc', 'nyc' or 'bids'
   id          text not null,             -- county file id or DOB job number
-  area        text not null,             -- 'wc:<town>' or 'nyc:<borough>'
+  area        text not null,             -- 'wc:<town>', 'nyc:<borough>' or 'bids:<source>'
   payload     jsonb not null,            -- the row as the page expects it, plus its extras
   run         text not null default '',  -- upload run id; rows from older runs are deleted
   primary key (region, id)

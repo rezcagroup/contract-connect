@@ -1,4 +1,4 @@
-"""Upload the Westchester and NYC data to Supabase, where signed-in users can read only the areas they picked.
+"""Upload the Westchester, NYC and public-bid data to Supabase, where signed-in users can read only the areas they picked.
 
 Run after pull_westchester.py / pull_nyc.py:  python3 push_supabase.py
 Needs two environment variables (in GitHub they are repository secrets):
@@ -9,7 +9,8 @@ Without them it prints a note and exits without error, so the rest of the daily 
 Tables (see supabase/schema.sql):
   projects   one row per referral / filing: region, id, area ('wc:<town>' or 'nyc:<borough>'), payload
   area_info  town contacts, keyed by area
-  meta       NYC pull info, and the list of areas with project counts for the area picker
+  meta       NYC pull info, bid pull info, and the list of areas with project counts for the area picker
+  projects   also holds open public bids (region 'bids', area 'bids:nyc'), from pull_bids.py
 Each run stamps its rows with a run id, then deletes rows of that region left over from older runs.
 """
 import json, os, sys, time, urllib.request, urllib.error, urllib.parse
@@ -98,12 +99,28 @@ def nyc():
     return counts
 
 
+def bids():
+    """Open public bids (NYC City Record). One area, 'bids:nyc'. A pull with zero open bids still clears the old rows."""
+    src = load("bids.json", None)
+    if src is None:
+        print("Bids: no data/bids.json, skipped")
+        return 0
+    rows = src.get("rows", [])
+    if rows:
+        upsert("projects", [{"region": "bids", "id": b["id"], "area": "bids:nyc", "payload": b, "run": RUN} for b in rows], "region,id")
+    api("DELETE", f"projects?region=eq.bids&run=neq.{RUN}")
+    upsert("meta", [{"key": "bids", "payload": {"pulled": src.get("pulled", ""), "source": src.get("source", "")}}], "key")
+    print(f"Bids: {len(rows)} open construction solicitations")
+    return len(rows)
+
+
 def main():
     if not URL or not KEY:
         print("SUPABASE_URL / SUPABASE_SECRET_KEY not set: nothing uploaded")
         return
     _, wc_counts = westchester()
     nyc_counts = nyc()
+    bid_count = bids()
     # The area picker's list: every area on the county map (43 areas covering all 45 municipalities), so people can
     # pick a town before its next project is filed. Towns with no current projects show 0.
     towns = sorted(set(wc_counts) | set(load("contacts.json", {})) | set(load("shapes.json", {}).get("wc", {})))
@@ -112,6 +129,8 @@ def main():
         "wc": [{"area": "wc:" + t, "name": t, "count": wc_counts.get(t, 0)} for t in towns],
         "nyc": [{"area": "nyc:" + b, "name": b, "count": nyc_counts.get(b, 0)} for b in boros],
     }
+    if load("bids.json", None) is not None:
+        areas["bids"] = [{"area": "bids:nyc", "name": "NYC City Record", "count": bid_count}]
     if wc_counts or nyc_counts:
         upsert("meta", [{"key": "areas", "payload": areas}], "key")
     print("Uploaded to", urllib.parse.urlparse(URL).netloc)

@@ -1,0 +1,35 @@
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><div><h1>Public bids</h1><small id="cc-scope">Open NYC construction solicitations</small></div></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="tradebar" id="tradebar"></div>
+  <div class="ticker" id="ticker"></div>
+  <section>
+    <div class="eyebrow" id="b-eyebrow"></div>
+    <h2>Open construction bids</h2>
+    <p class="lede">Solicitations from NYC agencies that are open for bids now, soonest due first. These are public jobs: anyone who is qualified can bid. Click a bid for the scope, the agency contact and the link to the full notice.</p>
+  </section>
+  <section style="padding-top:0"><div class="tiles" id="tiles"></div></section>
+  <div class="panel">
+    <div class="controls">
+      <div class="ctl"><label for="b-show">Show</label><select id="b-show"><option value="mine">Bids that match my trades</option><option value="all">All construction bids</option></select></div>
+      <div class="ctl"><label for="b-agency">Agency</label><select id="b-agency"><option value="">All</option></select></div>
+      <div class="ctl"><label for="b-kind">Type</label><select id="b-kind"><option value="">All</option><option value="Construction">Construction</option><option value="Related services">Construction related services</option></select></div>
+      <div class="ctl"><label for="b-due">Due</label><select id="b-due"><option value="">Any time</option><option value="7">Within 7 days</option><option value="14">Within 14 days</option><option value="30">Within 30 days</option></select></div>
+      <div class="ctl"><label for="b-q">Search</label><input type="search" id="b-q" placeholder="Title, agency, PIN, scope"></div>
+      <div class="sub" id="b-count"></div>
+    </div>
+    <div class="tablewrap"><table id="bidtable"></table></div>
+  </div>
+  <section class="prose">
+    <h3>How it works</h3>
+    <p>Every morning the page reads the City Record, the city's official notice board, and keeps the solicitations in the two construction categories whose due date has not passed. A correction notice replaces the earlier notice for the same PIN. Contacts are the agency contacts the city lists; some agencies list none and take bids only through <a href="https://www.nyc.gov/site/mocs/passport/about-passport.page">PASSPort</a>, so search the PIN there.</p>
+    <p>"Matches my trades" is a keyword match on the title and scope, so it can miss a bid or catch one that is not for you. Use "All construction bids" to see everything, and always read the full notice before you bid. A general contractor sees every bid.</p>
+    <p>Source: NYC Open Data, <a href="https://data.cityofnewyork.us/d/dg92-zbpx">City Record Online</a>, updated every morning.</p>
+  </section>
+</main>
+<footer><div class="wrap">Built from public City Record notices on NYC Open Data. Due dates and requirements can change by addendum; check the notice.</div></footer>

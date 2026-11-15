@@ -10,7 +10,8 @@ CC.sb = CC.configured && window.supabase ? window.supabase.createClient(SB_URL, 
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 CC.esc = esc;
 CC.STACK = '<a class="cc-mark stack" href="index.html" aria-label="Contract Connect home"><img class="cc-ic" src="assets/icon.png" alt=""><span class="c1">Contract</span><span class="c2">Connect</span><span class="cc-tag">FIND\nBID\nWIN</span></a>';
-CC.REGIONS = {wc:{name:'Westchester', short:'Westchester', page:'westchester.html', unit:'towns'}, nyc:{name:'New York City', short:'NYC', page:'nyc.html', unit:'boroughs'}};
+CC.REGIONS = {wc:{name:'Westchester', short:'Westchester', page:'westchester.html', unit:'towns'}, nyc:{name:'New York City', short:'NYC', page:'nyc.html', unit:'boroughs'},
+  bids:{name:'Public bids', short:'Bids', page:'bids.html', unit:'sources'}};
 
 function notReady(){
   document.body.className = 'cc-page';
@@ -91,7 +92,7 @@ CC.meta = async key => {
   return data ? data.payload : null;
 };
 // Where to go after signing in: the first region the user picked something in, else the area picker.
-CC.home = areas => (areas||[]).some(a=>a.startsWith('wc:')) ? 'westchester.html' : (areas||[]).some(a=>a.startsWith('nyc:')) ? 'nyc.html' : 'areas.html';
+CC.home = areas => (areas||[]).some(a=>a.startsWith('wc:')) ? 'westchester.html' : (areas||[]).some(a=>a.startsWith('nyc:')) ? 'nyc.html' : (areas||[]).some(a=>a.startsWith('bids:')) ? 'bids.html' : 'areas.html';
 
 // All rows the database lets this user see, 1000 at a time.
 async function all(table, cols, filter){
@@ -143,7 +144,7 @@ CC.boot = async (region, start) => {
   if(scope) scope.textContent += ` · your ${mine.length} ${mine.length===1?R.unit.replace(/s$/,''):R.unit}`;
   const main = document.querySelector('main');
   const loading = document.createElement('div');
-  loading.className = 'cc-loading'; loading.textContent = 'Loading your projects…';
+  loading.className = 'cc-loading'; loading.textContent = region === 'bids' ? 'Loading open bids…' : 'Loading your projects…';
   main.prepend(loading);
   try {
     const rows = await all('projects', 'payload', q => q.eq('region', region).order('id'));
@@ -155,10 +156,13 @@ CC.boot = async (region, start) => {
         if(p.ev) D.EV[id] = p.ev; if(p.att) D.ATT[id] = p.att; if(p.team) D.TEAM[id] = p.team; if(p.permit) D.PERMITS[id] = p.permit;
       });
       (await all('area_info', 'area,payload', q => q.like('area', 'wc:%'))).forEach(r => D.CONTACTS[r.area.slice(3)] = r.payload);
+    } else if(region === 'bids'){
+      D.BIDS = Object.assign({pulled:'', source:''}, await CC.meta('bids'), {rows: rows.map(r=>r.payload)});
     } else {
       D.NYC = Object.assign({pulled:'', since:'', altMinCost:500000}, await CC.meta('nyc'), {rows: rows.map(r=>r.payload)});
     }
     loading.remove();
+    if(!rows.length && region === 'bids') return message('No open bids right now', `<p>There are no open construction bids from your sources. Check back after tomorrow morning's update.</p><p><a class="cc-btn" href="areas.html">Change sources</a></p>`);
     if(!rows.length) return message('No projects yet', `<p>There are no current filings in your ${R.unit}. Add more ${R.unit} or check back after tomorrow morning's update.</p><p><a class="cc-btn" href="areas.html">Change ${R.unit}</a></p>`);
     start(D);
   } catch(e){

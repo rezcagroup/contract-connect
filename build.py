@@ -6,6 +6,7 @@ Pages (written to the repo root and published by the daily GitHub job):
   areas.html        pick towns and boroughs
   westchester.html  Westchester app (County Planning Board referrals)
   nyc.html          NYC app (Department of Buildings filings)
+  bids.html         Public bids (open NYC construction solicitations from the City Record)
   cc.js, cc.css     shared sign-in code and styles
   ccmap.js          the outline map both apps use (shapes from data/shapes.json, see pull_shapes.py)
 
@@ -106,3 +107,4 @@ app("nyc.html", "New York City · Contract Connect", "nyc_body.html", "nyc_scrip
     # The borough buttons show only the boroughs this user picked.
     ("const BOROS = ['Manhattan','Brooklyn','Queens','Bronx','Staten Island'];",
      "const BOROS = ['Manhattan','Brooklyn','Queens','Bronx','Staten Island'].filter(b=>D.areas.includes(b));")])
+app("bids.html", "Public bids · Contract Connect", "bids_body.html", "bids_script.js", "bids", [])

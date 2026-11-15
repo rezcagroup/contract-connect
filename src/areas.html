@@ -57,17 +57,17 @@
   let trades = profile.trades.length ? profile.trades : first ? [] : local();
   if(!list){ $('#page').innerHTML = '<div class="cc-empty"><h2>Areas are being set up</h2><p>Project data hasn\'t been loaded yet. Check back after the next morning update.</p></div>'; return; }
 
-  const region = (key, title, unit, rows, filter) => `
+  const region = (key, title, unit, rows, filter, noun='project') => `
     <section class="region" data-r="${key}">
       <div class="region-head">
-        <h2>${title}<small>${rows.length} ${unit}</small></h2>
+        <h2>${title}<small>${rows.length} ${rows.length===1 ? unit.replace(/s$/,"") : unit}</small></h2>
         <div class="acts"><button type="button" data-all="${key}">Select all</button><button type="button" data-none="${key}">Clear</button></div>
       </div>
       ${filter ? `<div class="filter"><input type="search" placeholder="Find a town" data-f="${key}" aria-label="Find a town"></div>` : ''}
       <div class="grid">${rows.map(a => `
         <label class="tog ${picked.has(a.area)?'on':''}" data-name="${esc(a.name.toLowerCase())}">
           <input type="checkbox" value="${esc(a.area)}" ${picked.has(a.area)?'checked':''}>
-          <span><span class="nm">${esc(a.name)}</span><span class="ct">${a.count} project${a.count===1?'':'s'}</span></span>
+          <span><span class="nm">${esc(a.name)}</span><span class="ct">${a.count} ${noun}${a.count===1?'':'s'}</span></span>
           <span class="sw" aria-hidden="true"></span>
         </label>`).join('')}</div>
     </section>`;
@@ -75,13 +75,14 @@
   $('#page').innerHTML = `
     <div class="eyebrow">${first ? 'Step 2 of 2' : 'Your account'}</div>
     <h1>${first ? 'Your trades and areas' : 'My trades and areas'}</h1>
-    <p class="lede">Pick what you sell and turn on each town and borough you want projects from. Your call list and estimates follow these, and you can change them any time.</p>
+    <p class="lede">Pick what you sell and turn on each town and borough you want projects from, and the public bid sources you want to see. Your call list and estimates follow these, and you can change them any time.</p>
     <section class="region" data-r="trades">
       <div class="region-head"><h2>What do you sell?<small>pick all that apply</small></h2></div>
       <div class="cc-chips">${Object.entries(CC.TRADES).map(([k,n])=>`<button type="button" class="cc-chip" data-t="${k}" aria-pressed="${trades.includes(k)}">${esc(n)}</button>`).join('')}</div>
     </section>
     ${region('nyc', 'New York City', 'boroughs', list.nyc||[], false)}
     ${region('wc', 'Westchester County', 'towns', list.wc||[], true)}
+    ${(list.bids||[]).length ? region('bids', 'Public bids', 'sources', list.bids, false, 'open bid') : ''}
     <div class="savebar"><div class="in">
       <span class="sum" id="sum"></span><span class="msg" id="msg" role="status"></span>
       <button class="cc-btn" id="save" type="button">${first ? 'Save and see my projects' : 'Save changes'}</button>
@@ -92,8 +93,8 @@
     boxes().forEach(b => b.closest('.tog').classList.toggle('on', b.checked));
     const on = boxes().filter(b=>b.checked);
     const n = r => on.filter(b=>b.value.startsWith(r+':')).length;
-    const projects = on.reduce((s,b)=>s+(+b.closest('.tog').querySelector('.ct').textContent.split(' ')[0]||0),0);
-    $('#sum').innerHTML = (trades.length ? `<b>${trades.length}</b> trade${trades.length===1?'':'s'} · ` : '') + (on.length ? `<b>${n('wc')}</b> Westchester towns · <b>${n('nyc')}</b> boroughs · <b>${projects.toLocaleString()}</b> projects` : 'No areas picked yet');
+    const projects = on.filter(b=>!b.value.startsWith('bids:')).reduce((s,b)=>s+(+b.closest('.tog').querySelector('.ct').textContent.split(' ')[0]||0),0);
+    $('#sum').innerHTML = (trades.length ? `<b>${trades.length}</b> trade${trades.length===1?'':'s'} · ` : '') + (on.length ? `<b>${n('wc')}</b> Westchester towns · <b>${n('nyc')}</b> boroughs · <b>${projects.toLocaleString()}</b> projects${n('bids') ? ` · <b>${n('bids')}</b> bid source${n('bids')===1?'':'s'}` : ''}` : 'No areas picked yet');
     $('#msg').textContent = '';
   }
   document.addEventListener('change', e => { if(e.target.matches('.tog input')) sync(); });
@@ -116,7 +117,7 @@
     const areas = boxes().filter(b=>b.checked).map(b=>b.value);
     const msg = $('#msg'), btn = $('#save');
     if(!trades.length){ msg.className = 'msg err'; msg.textContent = 'Pick at least one trade you sell.'; document.querySelector('[data-r=trades]').scrollIntoView({behavior:'smooth',block:'center'}); return; }
-    if(!areas.length){ msg.className = 'msg err'; msg.textContent = 'Turn on at least one town or borough.'; return; }
+    if(!areas.length){ msg.className = 'msg err'; msg.textContent = 'Turn on at least one town, borough or bid source.'; return; }
     btn.disabled = true;
     try {
       await CC.saveAreas(user, areas, trades);

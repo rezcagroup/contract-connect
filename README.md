@@ -1,6 +1,6 @@
 # Contract Connect
 
-Early construction leads for Westchester County and New York City. Public landing page, sign-up, each user picks the towns and boroughs they work in, then sees the call lists, project pages and trade estimates for those areas only.
+Early construction leads for Westchester County and New York City, plus open public bids. Public landing page, sign-up, each user picks the towns and boroughs they work in, then sees the call lists, project pages and trade estimates for those areas only.
 
 ## Pages
 
@@ -11,6 +11,7 @@ Early construction leads for Westchester County and New York City. Public landin
 | `areas.html` | Pick towns and boroughs (first step after sign-up; "My areas" afterwards) |
 | `westchester.html` | Westchester app: County Planning Board referrals |
 | `nyc.html` | NYC app: Department of Buildings filings |
+| `bids.html` | Public bids: open NYC construction solicitations from the City Record |
 
 Sources are in `src/`; `python3 build.py` writes the pages above plus `cc.js` and `cc.css`. **The built pages contain no project data.** After sign-in, the app pages load data from Supabase, and the database returns only rows in the areas the user picked.
 
@@ -144,6 +145,32 @@ Source files: `src/nyc_body.html`, `src/nyc_script.js` (placeholder `__NYC__`); 
 ### Daily refresh and hosting
 
 `.github/workflows/refresh.yml` pulls the NYC data every morning, uploads it to Supabase, rebuilds the pages and publishes them with GitHub Pages. The published pages hold no data. Nothing is committed back to the repo, so `data/nyc.json` in git is only as fresh as the last manual pull.
+
+## Public bids
+
+`bids.html` lists open construction bids from NYC agencies, soonest due first. It is a different kind of lead from the two apps above: the work is already out for bid, so there is a due date and an agency contact instead of a stage and an estimate.
+
+Source: NYC Open Data, `dg92-zbpx` City Record Online (Socrata API, no key needed; set `NYC_APP_TOKEN` to avoid rate limits).
+
+Refresh (needs network access to `data.cityofnewyork.us`):
+
+```
+python3 pull_bids.py
+python3 build.py
+```
+
+`pull_bids.py` keeps Procurement notices of type Solicitation in the categories Construction/Construction Services and Construction Related Services whose due date has not passed, and writes `data/bids.json`.
+
+- **Corrections.** A correction or extension notice replaces the earlier notice with the same PIN.
+- **Postponed bids.** The city puts a far-future placeholder (9999, 2999, 2099) in the due date of a postponed bid. Those show "To be announced" while the notice is under 180 days old, and are dropped after that.
+- **Empty contacts.** The city fills missing contact fields with "." or zeros; these are blanked.
+- **Contacts.** Many agencies (DEP, for example) list no contact and take bids only through PASSPort. The page then shows the PIN to search there.
+- **Trade filter.** "Matches my trades" is a keyword match on the title and scope for each trade, so it is approximate. "All construction bids" shows everything, and a general contractor sees every bid.
+- **Expired bids.** The page hides any bid whose due date has passed, so a failed morning pull cannot leave expired bids showing. It also warns when the data is more than 3 days old.
+
+Access works like the other apps: `projects` rows have region `bids` and area `bids:nyc`, and a user sees them after turning on "NYC City Record" under Public bids on the areas page. No database change is needed: the area rules already cover it. The daily job runs `pull_bids.py` and `push_supabase.py` uploads the result.
+
+More sources can be added the same way, each with its own `bids:<source>` area (the federal SAM.gov Opportunities API and NYS Contract Reporter are the obvious next ones).
 
 ## Approval guide
 
