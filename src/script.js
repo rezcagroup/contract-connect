@@ -21,7 +21,7 @@ const TRADES = {
   windows:{n:'Windows & doors',s:.05,need:'windows, storefront and exterior doors'},
   paint:{n:'Painting',s:.03,need:'interior and exterior painting, coatings and wall finishes'}
 };
-const A = {psf:450, trades:['concrete'], days:30};
+const A = {psf:450, trades:['concrete'], days:90};  // 90 days: referrals come months before a permit, and 30 days is only a handful county-wide
 try{const s=JSON.parse(localStorage.getItem('wcl-assume')||'null'); if(s){A.psf=s.psf||A.psf; if(Array.isArray(s.trades)){const t=s.trades.filter(k=>TRADES[k]);if(t.length)A.trades=t}else if(TRADES[s.trade])A.trades=[s.trade]; if([7,14,30,60,90,180].includes(s.days))A.days=s.days;}}catch(e){}
 if(D.trades&&D.trades.length){const t=D.trades.filter(k=>TRADES[k]);if(t.length)A.trades=t;}  // the account's trades win over this browser's
 const PUBLIC = /Institutional|Utilities|Recreation/;
