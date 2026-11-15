@@ -72,6 +72,7 @@ header nav a.link:hover{color:var(--ink)}
 .kv small{display:block;font:500 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
 .kv b{font:700 22px var(--display);font-variant-numeric:tabular-nums}
 .blur{filter:blur(5px);user-select:none}
+.ph{display:inline-block;height:.8em;border-radius:2px;background:#3a4452;vertical-align:middle}
 .rows{font-size:14px}
 .rows div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px dashed var(--line)}
 .rows span:first-child{color:var(--mute)}
@@ -144,7 +145,7 @@ footer .cc-mark.stack{font-size:40px}
       <div>
         <div class="eyebrow">Westchester County · New York City</div>
         <h1>Find the job <em>before</em> everyone else bids it.</h1>
-        <p class="lede">Contract Connect reads every new private construction filing in <b>Westchester's towns</b> and <b>New York City's five boroughs</b> and turns it into a call list for your trade. You see the project, how big it is, what your piece is worth, and who to contact. That's <b>months before a building permit</b>, while the trades are still open.</p>
+        <p class="lede">Contract Connect reads the new construction filings in <b>Westchester's towns</b> and <b>New York City's five boroughs</b> and turns it into a call list for your trade. You see the project, how big it is, what your piece is worth, and who to contact. That's <b>months before a building permit</b>, while the trades are still open.</p>
         <div class="cta-row">
           <a class="btn primary" href="login.html#signup">Create your account</a>
           <a class="btn ghost" href="#how">See how it works</a>
@@ -155,18 +156,19 @@ footer .cc-mark.stack{font-size:40px}
       <div class="card" aria-label="Example lead">
         <div class="head"><span class="tag new">New · filed 3 days ago</span><span class="tag trade">Selling as: Concrete</span></div>
         <div class="body">
+          <div style="font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:6px">Example project</div>
           <div class="title">Mixed-use building, 4 stories</div>
-          <div class="mute" style="font-size:14px">Site plan · <span class="blur">White Plains</span> · Planning Board</div>
+          <div class="mute" style="font-size:14px">Site plan · <span class="ph" style="width:70px"></span> · Planning Board</div>
           <div class="kv">
             <div><small>Floor area</small><b>38,400 sf</b></div>
             <div><small>Units</small><b>32</b></div>
             <div><small>Your share</small><b>$1.4M</b></div>
           </div>
           <div class="rows">
-            <div><span>Developer</span><span class="blur">Hudson Ridge Partners LLC</span></div>
-            <div><span>Architect</span><span class="blur">M. Alvarez Architects</span></div>
-            <div><span>Town contact</span><span class="blur">(914) 555-0142</span></div>
-            <div><span>Outreach email</span><span class="blur">Ready to send</span></div>
+            <div><span>Developer</span><span class="ph" style="width:150px"></span></div>
+            <div><span>Architect</span><span class="ph" style="width:120px"></span></div>
+            <div><span>Town contact</span><span class="ph" style="width:96px"></span></div>
+            <div><span>Outreach email</span><span class="ph" style="width:84px"></span></div>
           </div>
           <div style="height:64px"></div>
         </div>
@@ -208,7 +210,7 @@ footer .cc-mark.stack{font-size:40px}
       <div class="grid2" style="margin-top:28px">
         <div class="box"><h3>A fresh call list every morning</h3><p>Private projects with a real building in them, newest first. Anything filed in the last two weeks is marked NEW.</p></div>
         <div class="box"><h3>Your trade's slice, estimated</h3><p>Every project shows what your scope is roughly worth, from floor area and typical cost shares. Change the cost per square foot to match your market.</p></div>
-        <div class="box"><h3>Who's behind it</h3><p>Developer, architect, engineer and filing representative from public records. In NYC, the GC once one pulls a permit.</p></div>
+        <div class="box"><h3>Who's behind it</h3><p>In NYC, the owner, the architect or engineer and the filing representative from the city filing, plus the GC once one pulls a permit. In Westchester, the town's planning contact, and the developer and design team where public records name them.</p></div>
         <div class="box"><h3>Who to call</h3><p>Town building and planning contacts, phone numbers, links to the original filing, and two outreach emails written for your trade.</p></div>
         <div class="box"><h3>The scope, from the filing</h3><p>Stories, units, parking, site acres and land disturbance, with quotes from the filing and county review comments.</p></div>
         <div class="box"><h3>Export to your CRM</h3><p>Copy your call list as a spreadsheet in one click.</p></div>
@@ -231,7 +233,7 @@ footer .cc-mark.stack{font-size:40px}
     <div class="wrap">
       <div class="eyebrow">Coverage</div>
       <h2>Only the towns you work in</h2>
-      <p class="intro">Turn on just the places you want to hear about. Here's what's covered today.</p>
+      <p class="intro">Turn on just the places you want to hear about. Here's where projects have been filed in the past year.</p>
       <h3>New York City <span class="count">5 boroughs</span></h3>
       <div class="chips" style="margin-bottom:28px">
         <span class="chip">Manhattan</span><span class="chip">Brooklyn</span><span class="chip">Queens</span><span class="chip">The Bronx</span><span class="chip">Staten Island</span>
@@ -283,9 +285,9 @@ WIN</span></a><span>© <span id="yr"></span> Contract Connect</span></span>
 </footer>
 
 <script>
-const WC_TOWNS = ["Ardsley","Bedford","Briarcliff Manor","Bronxville","Buchanan","Cortlandt","Dobbs Ferry","Eastchester","Greenburgh","Harrison","Hastings-on-Hudson","Larchmont","Lewisboro","Mamaroneck Town","Mamaroneck Village","Mount Kisco","Mount Pleasant","Mount Vernon","New Castle","New Rochelle","North Castle","North Salem","Ossining Village","Peekskill","Pelham Manor","Pleasantville","Port Chester","Rye Brook","Rye City","Sleepy Hollow","Somers","Tarrytown","Tuckahoe","White Plains","Yonkers","Yorktown"];
+const WC_TOWNS = __WC_TOWNS__;  // filled by build.py from the current Westchester data
 document.getElementById('wc-towns').innerHTML = WC_TOWNS.map(t => `<span class="chip">${t}</span>`).join('');
-document.getElementById('wc-count').textContent = WC_TOWNS.length + ' municipalities';
+document.getElementById('wc-count').textContent = WC_TOWNS.length + ' cities, towns and villages';
 document.getElementById('yr').textContent = new Date().getFullYear();
 </script>
 </body>
